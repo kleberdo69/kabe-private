@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>KABE PRIVATE</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@400;500;600;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0a0a0f;--bg2:rgba(16,16,24,.85);--bg3:#14141c;--bg4:#1d1d28;
+  --red:#ff1e2d;--red2:#ff4a56;--red3:#ff8f98;--red-dim:rgba(255,30,45,.14);
+  --blue:#00e5ff;--blue2:#4ff0ff;--blue-dim:rgba(0,229,255,.12);
+  --pink:#ff2d9a;
+  --green:#00e676;--yellow:#ffe600;
+  --text:#ffffff;--muted:#9aa0b5;--border:rgba(255,255,255,.14);
+  --glow:0 0 32px rgba(255,30,45,.3);
+  --radius:12px;--font:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --display:'Anton',Impact,sans-serif;
+}
+html{scroll-behavior:smooth}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font)}
+body{overflow:hidden}
+::selection{background:rgba(255,30,45,.4);color:#fff}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+input,select,textarea{
+  width:100%;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.16);
+  border-radius:6px;padding:13px 15px;outline:0;
+  transition:border-color .2s,box-shadow .2s,background .2s;
+}
+input::placeholder,textarea::placeholder{color:#6d7488}
+input:hover,select:hover,textarea:hover{border-color:rgba(255,30,45,.3)}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--blue);
+  box-shadow:0 0 0 3px rgba(0,229,255,.15);
+  background:rgba(0,229,255,.04);
+}
+/* AMBIENT */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(900px 520px at 10% -10%,rgba(255,30,45,.14),transparent 55%),
+    radial-gradient(700px 440px at 96% 10%,rgba(0,229,255,.14),transparent 50%),
+    radial-gradient(640px 400px at 50% 104%,rgba(255,30,45,.07),transparent 55%),
+    linear-gradient(180deg,#101018 0%,#0a0a0f 100%);
+}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.grid-overlay{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,.07) 1.5px,transparent 1.6px);
+  background-size:16px 16px;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 40%,#000 10%,transparent 80%);
+  mask-image:radial-gradient(ellipse at 50% 40%,#000 10%,transparent 80%);
+}
+.orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0}
+.o1{width:520px;height:520px;left:-180px;top:-180px;background:radial-gradient(circle,rgba(255,30,45,.22),transparent 70%);animation:drift1 26s ease-in-out infinite}
+.o2{width:430px;height:430px;right:-140px;top:20%;background:radial-gradient(circle,rgba(0,229,255,.18),transparent 70%);animation:drift2 30s ease-in-out infinite}
+.o3{width:390px;height:390px;left:32%;bottom:-170px;background:radial-gradient(circle,rgba(255,45,154,.12),transparent 70%);animation:drift3 34s ease-in-out infinite}
+@keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(60px,50px) scale(1.1)}}
+@keyframes drift2{0%,100%{transform:translate(0,0) scale(1.05)}50%{transform:translate(-55px,65px) scale(.95)}}
+@keyframes drift3{0%,100%{transform:translate(0,0) scale(.95)}50%{transform:translate(45px,-55px) scale(1.08)}}
+/* LOGIN */
+#loginWrap{
+  position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+  padding:20px;
+}
+#loginWrap.hidden{display:none}
+.login-box{
+  position:relative;width:min(400px,100%);
+  background:linear-gradient(180deg,#16161e,#0b0b10);
+  border:2px solid rgba(255,30,45,.6);border-radius:16px;
+  padding:30px 28px;
+  box-shadow:0 0 34px rgba(255,30,45,.25),0 24px 60px rgba(0,0,0,.6),inset 0 0 50px rgba(0,229,255,.05);
+  animation:cardIn .5s ease,glowPulse 4s ease-in-out infinite;
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes glowPulse{
+  0%,100%{box-shadow:0 0 30px rgba(255,30,45,.22),0 24px 60px rgba(0,0,0,.6),inset 0 0 50px rgba(0,229,255,.05)}
+  50%{box-shadow:0 0 56px rgba(255,30,45,.4),0 26px 70px rgba(0,0,0,.65),inset 0 0 60px rgba(0,229,255,.08)}
+}
+.login-box::before{
+  content:'';position:absolute;inset:-2px;border-radius:17px;padding:2px;
+  background:linear-gradient(135deg,rgba(255,30,45,.8),rgba(255,255,255,.08) 40%,rgba(0,229,255,.6) 75%,rgba(255,45,154,.5));
+  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;
+}
+.term-bar{
+  display:flex;align-items:center;gap:7px;
+  margin:-30px -28px 24px;padding:12px 15px;border-radius:14px 14px 0 0;
+  background:rgba(255,30,45,.12);border-bottom:2px solid rgba(255,30,45,.45);
+}
+.term-bar i{
+  width:10px;height:10px;display:block;border-radius:50%;
+  box-shadow:0 0 8px currentColor;
+}
+.term-bar i:nth-child(1){background:var(--red);color:var(--red)}
+.term-bar i:nth-child(2){background:var(--blue);color:var(--blue)}
+.term-bar i:nth-child(3){background:var(--pink);color:var(--pink)}
+.term-bar span{
+  margin-left:auto;font-family:var(--display);font-size:13px;letter-spacing:2px;
+  color:var(--red2);text-transform:uppercase;text-shadow:0 2px 0 rgba(0,0,0,.5);
+}
+.brand-row{display:flex;align-items:center;gap:13px;margin-bottom:24px}
+.brand-row .logo{
+  width:52px;height:52px;border-radius:14px;
+  background:linear-gradient(135deg,#ff1e2d 0 50%,#00e5ff 50% 100%);
+  border:2px solid #000;
+  display:grid;place-items:center;font-family:var(--display);font-weight:400;font-size:24px;color:#ffffff;
+  box-shadow:4px 4px 0 #000,0 0 26px rgba(255,30,45,.4);
+  text-shadow:2px 2px 0 rgba(0,0,0,.5);
+  animation:logoPulse 3.5s ease-in-out infinite;
+}
+@keyframes logoPulse{0%,100%{box-shadow:4px 4px 0 #000,0 0 22px rgba(255,30,45,.35)}50%{box-shadow:4px 4px 0 #000,0 0 42px rgba(255,30,45,.6)}}
+.brand-row h1{font-family:var(--display);font-size:24px;font-weight:400;letter-spacing:1px;color:#fff;text-shadow:3px 3px 0 rgba(255,30,45,.6),-1px -1px 0 rgba(0,229,255,.5)}
+@supports((-webkit-background-clip:text) or (background-clip:text)){
+  .brand-row h1{background:linear-gradient(135deg,#ffffff 15%,#ff4a56 60%,#ff1e2d);-webkit-background-clip:text;background-clip:text;color:transparent}
+}
+.brand-row p{font-size:10px;color:var(--blue2);margin-top:3px;letter-spacing:3px;text-transform:uppercase;font-weight:700}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:10px;color:var(--muted);margin-bottom:7px;font-weight:600;text-transform:uppercase;letter-spacing:2px}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:44px;padding:11px 18px;border-radius:6px;font-weight:600;font-size:12.5px;
+  background:#0d0d14;border:1.5px solid rgba(255,255,255,.3);color:#ffffff;
+  box-shadow:0 3px 0 rgba(255,255,255,.14);
+  text-transform:uppercase;letter-spacing:.8px;
+  transition:all .18s;
+}
+.btn:hover:not(:disabled){border-color:var(--red);box-shadow:0 3px 0 rgba(255,30,45,.55);transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-main{
+  background:linear-gradient(180deg,#ff1e2d 0%,#c1121f 55%,#8b0f1a);
+  border:2px solid #000;color:#ffffff;width:100%;
+  box-shadow:0 4px 0 #000,0 8px 20px rgba(0,0,0,.5);
+  text-shadow:0 1px 2px rgba(0,0,0,.55);
+}
+.btn-main:hover:not(:disabled){box-shadow:0 4px 0 #000,0 10px 30px rgba(255,30,45,.45);transform:translateY(-1px)}
+.btn-sm{min-height:36px;padding:8px 14px;font-size:11.5px;border-radius:5px}
+.login-err{color:var(--red3);font-size:13px;min-height:18px;margin-top:10px;text-align:center}
+.login-hint{color:var(--muted);font-size:11.5px;text-align:center;margin-top:16px;letter-spacing:.5px}
+/* APP */
+#app{display:none;height:100%;height:100dvh;position:relative;z-index:1}
+#app.show{display:flex;flex-direction:row}
+.sidebar{
+  width:240px;flex-shrink:0;
+  background:linear-gradient(180deg,#12121a,#0a0a10);
+  border-right:2px solid rgba(255,30,45,.35);
+  display:flex;flex-direction:column;
+  box-shadow:10px 0 40px rgba(0,0,0,.45);
+  position:relative;
+}
+.sidebar::after{
+  content:'';position:absolute;top:0;right:-2px;height:100%;width:2px;
+  background:linear-gradient(180deg,transparent,rgba(0,229,255,.5),transparent);
+}
+.side-brand{padding:22px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,.14)}
+.side-brand .mark{
+  width:42px;height:42px;border-radius:12px;
+  background:linear-gradient(135deg,#ff1e2d 0 50%,#00e5ff 50% 100%);border:2px solid #000;
+  display:grid;place-items:center;font-family:var(--display);font-weight:400;font-size:18px;color:#ffffff;
+  box-shadow:3px 3px 0 #000,0 6px 18px rgba(0,0,0,.45);
+  text-shadow:1.5px 1.5px 0 rgba(0,0,0,.5);
+}
+.side-brand .name{font-family:var(--display);font-weight:400;font-size:12px;letter-spacing:2px;text-shadow:2px 2px 0 rgba(255,30,45,.35)}
+.side-brand .ver{font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:.5px}
+.nav{padding:14px 10px;flex:1;overflow:auto}
+.nav-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:3px;padding:8px 12px 8px;font-weight:600}
+.nav-btn{
+  display:flex;align-items:center;gap:11px;width:100%;text-align:left;
+  padding:11px 14px;border-radius:5px;color:var(--muted);font-size:12.5px;font-weight:600;
+  margin-bottom:3px;transition:all .18s;position:relative;letter-spacing:.4px;
+}
+.nav-btn:hover{background:rgba(255,30,45,.08);color:var(--text)}
+.nav-btn.active{
+  background:linear-gradient(90deg,rgba(255,30,45,.22),rgba(255,30,45,.04));
+  color:#fff;box-shadow:inset 3px 0 0 var(--red),0 0 18px rgba(255,30,45,.12);
+}
+.nav-btn.active svg{color:var(--red2);filter:drop-shadow(0 0 6px rgba(255,30,45,.6))}
+.nav-btn svg{width:18px;height:18px;flex-shrink:0;opacity:.85;transition:all .18s}
+.side-user{padding:14px 16px;border-top:1px solid rgba(255,255,255,.14);display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.3)}
+.side-user .av{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,var(--red-dim),rgba(12,12,18,.9));
+  border:1px solid rgba(255,30,45,.4);
+  display:grid;place-items:center;font-size:13px;font-weight:700;color:var(--red2);
+  box-shadow:0 0 12px rgba(255,30,45,.15);
+}
+.side-user .info{flex:1;min-width:0}
+.side-user .info strong{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side-user .info span{font-size:11px;color:var(--green);font-weight:600;letter-spacing:.5px}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.topbar{
+  height:62px;flex-shrink:0;display:flex;align-items:center;gap:12px;
+  padding:0 26px;border-bottom:2px solid rgba(255,30,45,.4);
+  background:rgba(12,12,18,.75);backdrop-filter:blur(14px);
+  box-shadow:0 10px 30px rgba(0,0,0,.35);
+  position:relative;z-index:2;
+}
+.topbar::after{
+  content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px;
+  background:linear-gradient(90deg,rgba(255,30,45,.6),rgba(0,229,255,.5),rgba(255,45,154,.4));
+}
+.topbar .mark{
+  width:38px;height:38px;border-radius:11px;
+  background:linear-gradient(135deg,#ff1e2d 0 50%,#00e5ff 50% 100%);border:2px solid #000;
+  display:grid;place-items:center;font-family:var(--display);font-weight:400;color:#ffffff;font-size:17px;
+  box-shadow:2px 2px 0 #000,0 6px 16px rgba(0,0,0,.45);
+  text-shadow:1.5px 1.5px 0 rgba(0,0,0,.5);
+}
+.topbar .title{font-family:var(--display);font-size:13px;font-weight:400;letter-spacing:2px}
+.topbar .sub{font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:.8px}
+.pill{
+  margin-left:auto;font-size:10.5px;font-weight:600;padding:6px 12px;border-radius:4px;
+  background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.18);color:var(--muted);
+  display:flex;align-items:center;gap:7px;letter-spacing:1px;text-transform:uppercase;
+  transition:all .25s;
+}
+.pill i{width:7px;height:7px;border-radius:50%;background:currentColor;display:block}
+.pill.on{color:var(--green);border-color:rgba(0,230,118,.4);background:rgba(0,230,118,.08);box-shadow:0 0 14px rgba(0,230,118,.18)}
+.pill.on i{animation:blink 1.6s infinite}
+.pill.warn i{animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+.content{flex:1;overflow:auto;padding:26px;scrollbar-width:thin;scrollbar-color:#b00e1b transparent}
+.content::-webkit-scrollbar{width:8px}
+.content::-webkit-scrollbar-thumb{background:#b00e1b;border-radius:4px}
+.page{display:none;animation:fadeUp .3s ease}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.head{margin-bottom:24px}
+.head h2{font-family:var(--display);font-size:26px;font-weight:400;letter-spacing:.5px;margin-bottom:6px;color:#fff;text-shadow:3px 3px 0 rgba(255,30,45,.55),-1px -1px 0 rgba(0,229,255,.4)}
+@supports((-webkit-background-clip:text) or (background-clip:text)){
+  .head h2{background:linear-gradient(135deg,#ffffff 20%,#ff4a56 60%,#ff1e2d);-webkit-background-clip:text;background-clip:text;color:transparent}
+}
+.head p{color:var(--muted);font-size:12.5px;line-height:1.6;letter-spacing:.2px}
+.grid{display:grid;gap:14px}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:900px){.g3,.g2{grid-template-columns:1fr}}
+.card{
+  position:relative;
+  background:linear-gradient(160deg,#16161e,#0c0c12);
+  border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:18px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),inset 0 -3px 10px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.3);
+  transition:border-color .25s,transform .2s,box-shadow .25s;
+}
+.card::before{
+  content:'';position:absolute;top:0;left:20px;right:20px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,30,45,.4),transparent);
+}
+.card:hover{border-color:rgba(255,30,45,.45);transform:translateY(-2px)}
+.card h3{font-size:13.5px;margin-bottom:6px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+.card p{font-size:12.5px;color:var(--muted);line-height:1.55}
+.stat{position:relative;overflow:hidden}
+.stat::before{
+  content:'';position:absolute;top:-30px;right:-20px;width:110px;height:110px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,30,45,.16),transparent 70%);
+}
+.stat .v{font-family:var(--display);font-size:26px;font-weight:400;position:relative;z-index:1}
+.stat .l{font-size:10.5px;color:var(--muted);margin-top:5px;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+@supports((-webkit-background-clip:text) or (background-clip:text)){
+  .stat .v{background:linear-gradient(135deg,#ffffff 15%,#ff1e2d 60%,#00e5ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+}
+.fcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.fcard{
+  position:relative;overflow:hidden;
+  background:linear-gradient(160deg,#16161e,#0c0c12);
+  border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:18px;
+  display:flex;flex-direction:column;gap:10px;min-height:150px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),inset 0 -3px 10px rgba(0,0,0,.35),0 8px 22px rgba(0,0,0,.3);
+  transition:transform .22s,border-color .22s,box-shadow .25s;
+}
+.fcard::before{
+  content:'';position:absolute;top:0;left:18px;right:18px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,30,45,.45),transparent);
+}
+.fcard:hover{transform:translateY(-3px);border-color:rgba(255,30,45,.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),inset 0 -3px 10px rgba(0,0,0,.35),0 14px 36px rgba(0,0,0,.4),0 0 22px rgba(255,30,45,.12)}
+.fcard .ico{
+  width:42px;height:42px;border-radius:6px;
+  background:linear-gradient(160deg,rgba(255,30,45,.2),rgba(255,30,45,.05));
+  border:1px solid rgba(255,30,45,.3);
+  display:grid;place-items:center;color:var(--red2);font-weight:800;font-size:13px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 5px 14px rgba(0,0,0,.3);
+}
+.fcard h3{font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.fcard p{font-size:12px;color:var(--muted);flex:1;line-height:1.5}
+.fcard .meta{font-size:11px;color:#7b8298;font-family:var(--font);letter-spacing:.5px}
+.fcard .btn{align-self:flex-start}
+.log{
+  background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.16);border-radius:6px;
+  padding:12px 14px;font-family:var(--font);font-size:12px;
+  min-height:80px;max-height:200px;overflow:auto;color:var(--muted);margin-top:14px;
+  box-shadow:inset 0 2px 14px rgba(0,0,0,.45);
+}
+.log .ok{color:var(--green)}
+.log .err{color:var(--red2)}
+.log div{margin-bottom:4px;line-height:1.5;word-break:break-word}
+.seg{
+  display:flex;gap:6px;margin-bottom:16px;padding:4px;
+  background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.16);border-radius:6px;
+}
+.seg button{
+  flex:1;padding:10px;border-radius:4px;font-size:11.5px;font-weight:600;
+  color:var(--muted);transition:all .18s;text-transform:uppercase;letter-spacing:.8px;
+}
+.seg button:hover{color:var(--text)}
+.seg button.on{
+  background:linear-gradient(180deg,#ff3a47,#b00e1b 60%,#8b0f1a);color:#ffffff;
+  box-shadow:0 4px 14px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.4),inset 0 -3px 5px rgba(0,0,0,.35);
+  text-shadow:0 1px 2px rgba(0,0,0,.5);
+}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.row2.full{grid-template-columns:1fr}
+.tabs{display:flex;gap:6px;margin-bottom:12px;padding:4px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.16);border-radius:6px}
+.tabs button{flex:1;border:none;background:transparent;border-radius:4px;transition:all .18s}
+.tabs button.on{
+  background:rgba(255,30,45,.2);color:var(--red3);
+  box-shadow:inset 0 0 0 1px rgba(255,30,45,.35),0 0 12px rgba(255,30,45,.12);
+}
+#keyBox{min-height:100px;font-family:var(--font);font-size:11px;resize:vertical;display:none}
+.badge{
+  display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:4px;
+  font-size:11px;font-weight:600;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.18);color:var(--muted);
+  text-transform:uppercase;letter-spacing:.8px;transition:all .25s;
+}
+.badge i{width:7px;height:7px;border-radius:50%;background:currentColor;display:block}
+.badge.on{color:var(--green);border-color:rgba(0,230,118,.4);background:rgba(0,230,118,.08);box-shadow:0 0 14px rgba(0,230,118,.18)}
+.badge.on i{animation:blink 1.6s infinite}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;align-items:center}
+.toggle-row{
+  display:flex;align-items:center;justify-content:space-between;padding:16px 0;
+  border-bottom:1px solid rgba(255,255,255,.14);transition:background .18s;border-radius:6px;
+}
+.toggle-row:hover{background:rgba(255,30,45,.04)}
+.toggle-row:last-of-type{border-bottom:none}
+.toggle-row h4{font-size:13px;font-weight:700;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
+.toggle-row p{font-size:11.5px;color:var(--muted)}
+.switch{
+  width:48px;height:28px;border-radius:5px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.2);
+  position:relative;transition:all .2s;flex-shrink:0;
+}
+.switch::after{
+  content:'';position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:3px;
+  background:linear-gradient(180deg,#2a2a35,#1a1a22);transition:all .2s;
+  box-shadow:0 2px 5px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.5);
+}
+.switch.on{
+  background:linear-gradient(180deg,#00e5ff,#0090b0);border-color:#004d5e;
+  box-shadow:0 0 16px rgba(0,229,255,.5),inset 0 1px 0 rgba(255,255,255,.4);
+}
+.switch.on::after{left:23px;background:#ffffff}
+.key-display{
+  margin-top:16px;padding:10px 14px;background:rgba(255,230,0,.07);
+  border:1px solid rgba(255,230,0,.3);border-radius:6px;
+  font-family:var(--font);font-size:13px;color:var(--yellow);text-align:center;font-weight:600;
+  letter-spacing:.5px;
+}
+.list{list-style:none}
+.list li{padding:11px 8px;border-bottom:1px solid rgba(255,255,255,.14);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:12px;border-radius:6px;transition:background .18s}
+.list li:hover{background:rgba(255,30,45,.04)}
+.list li:last-child{border-bottom:none}
+.list li span:first-child{flex:1}
+.list li b{color:var(--text);font-weight:700;margin-right:6px;text-transform:uppercase;font-size:11px;letter-spacing:.5px}
+.list code{background:rgba(255,30,45,.12);color:var(--red3);padding:2px 7px;border-radius:4px;font-size:11px;font-family:var(--font);border:1px solid rgba(255,30,45,.25)}
+@media(max-width:900px){
+  .sidebar{width:74px}
+  .side-brand .name,.side-brand .ver,.nav-label,.nav-btn span,.side-user .info{display:none}
+  .side-brand{justify-content:center}
+  .nav-btn{justify-content:center;padding:12px}
+  .row2{grid-template-columns:1fr}
+  .fcards{grid-template-columns:1fr 1fr}
+  .topbar .sub{display:none}
+  .content{padding:16px 14px}
+}
+@media(max-width:480px){.fcards{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- AMBIENT -->
+<div class="grid-overlay"></div>
+<div class="orb o1"></div>
+<div class="orb o2"></div>
+<div class="orb o3"></div>
+
+<!-- LOGIN -->
+<div id="loginWrap">
+  <div class="login-box">
+    <div class="term-bar"><i></i><i></i><i></i><span>KABE-PRIVATE v1.0</span></div>
+    <div class="brand-row">
+      <div class="logo">K</div>
+      <div>
+        <h1>KABE PRIVATE</h1>
+        <p>Acesso Exclusivo</p>
+      </div>
+    </div>
+    <div class="field">
+      <label>Usuario</label>
+      <input id="loginUser" type="text" placeholder="Digite seu usuario" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input id="loginPass" type="password" placeholder="Digite sua senha" autocomplete="current-password">
+    </div>
+    <button class="btn btn-main" id="loginBtn" type="button" onclick="doLogin()">Entrar</button>
+    <div class="login-err" id="loginErr"></div>
+    <div class="login-hint">Demo: admin / 1234</div>
+  </div>
+</div>
+
+<script>
+function doLogin(){
+  var u=document.getElementById('loginUser').value.trim();
+  var p=document.getElementById('loginPass').value;
+  if(u==='admin'&&p==='1234'){
+    document.getElementById('userLabel').textContent=u;
+    document.getElementById('loginWrap').classList.add('hidden');
+    document.getElementById('app').classList.add('show');
+    document.getElementById('loginErr').textContent='';
+  }else{
+    document.getElementById('loginErr').textContent='Usuario ou senha incorretos.';
+  }
+}
+document.getElementById('loginPass').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
+document.getElementById('loginUser').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
+</script>
+
+<!-- APP -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="side-brand">
+      <div class="mark">K</div>
+      <div>
+        <div class="name">KABE PRIVATE</div>
+        <div class="ver">v1.0</div>
+      </div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="side-user">
+      <div class="av">U</div>
+      <div class="info">
+        <strong id="userLabel">Usuario</strong>
+        <span>Premium</span>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="mark">K</div>
+      <div>
+        <div class="title">KABE PRIVATE</div>
+        <div class="sub" id="crumb">Inicio / Visao Geral</div>
+      </div>
+      <div class="pill warn" id="enginePill"><i></i><span id="engineText">DEMO</span></div>
+    </header>
+    <div class="content">
+
+      <section class="page active" id="page-home">
+        <div class="head">
+          <h2>Bem-vindo de volta</h2>
+          <p>Controle todas as suas funcoes em um so lugar</p>
+        </div>
+        <div class="grid g3" style="margin-bottom:20px">
+          <div class="card stat"><div class="v" id="statFuncs">4</div><div class="l">Funcoes ativas</div></div>
+          <div class="card stat"><div class="v" id="statConn">Offline</div><div class="l">Status da conexao</div></div>
+          <div class="card stat"><div class="v" id="statTime">00:00:00</div><div class="l">Tempo online</div></div>
+        </div>
+        <h3 style="margin-bottom:12px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px">Suas Funcoes</h3>
+        <div class="fcards">
+          <div class="fcard"><div class="ico">HS</div><h3>HS Limpo</h3><p>Restaura o arquivo original do jogo</p><button class="btn btn-sm btn-main" data-go="hs" type="button" style="width:auto">Abrir</button></div>
+          <div class="fcard"><div class="ico">A+</div><h3>HS Alto</h3><p>Aumento de dano nos pontos criticos</p><button class="btn btn-sm btn-main" data-go="hs" type="button" style="width:auto">Abrir</button></div>
+          <div class="fcard"><div class="ico">N</div><h3>HS Pescoco</h3><p>Mod focado em pescoco</p><button class="btn btn-sm btn-main" data-go="hs" type="button" style="width:auto">Abrir</button></div>
+          <div class="fcard"><div class="ico">3D</div><h3>Holograma</h3><p>Visualizacao tatica em 3D do mapa</p><button class="btn btn-sm btn-main" data-go="holo" type="button" style="width:auto">Abrir</button></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-hs">
+        <div class="head">
+          <h2>HS / Injecao</h2>
+          <p>Envie os arquivos HS para o jogo — sempre substituindo, nunca duplicando</p>
+        </div>
+        <div class="fcards" id="hsGrid"></div>
+        <div class="log" id="hsLog"><div>Aguardando</div></div>
+      </section>
+
+      <section class="page" id="page-conn">
+        <div class="head">
+          <h2>Conexao SSH</h2>
+          <p>Configure o acesso SSH e aprove com o modulo KaE Private no celular</p>
+        </div>
+        <div class="card" style="max-width:560px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+            <h3>Acesso SSH PORT 22</h3>
+            <div class="badge" id="connBadge"><i></i><span id="connBadgeText">Desconectado</span></div>
+          </div>
+          <div class="row2">
+            <div class="field" style="margin:0"><label>Host</label><input id="sshHost" value="192.168.0.100"></div>
+            <div class="field" style="margin:0"><label>Porta</label><input id="sshPort" type="number" value="22"></div>
+          </div>
+          <div class="row2 full"><div class="field" style="margin:0"><label>Usuario</label><input id="sshUser" value="root"></div></div>
+          <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:2px;font-weight:600">Autenticacao</label>
+          <div class="tabs">
+            <button class="btn btn-sm" id="authPassBtn" type="button">Senha</button>
+            <button class="btn btn-sm on" id="authKeyBtn" type="button">Chave</button>
+          </div>
+          <div class="field" id="passField" style="display:none"><label>Senha</label><input id="sshPass" type="password"></div>
+          <div class="field" id="keyField">
+            <label>Chave privada</label>
+            <textarea id="keyBox" placeholder="Carregada do PC ou cole aqui"></textarea>
+            <button class="btn btn-sm" id="loadKeyBtn" type="button" style="margin-top:8px">Carregar chave do PC</button>
+          </div>
+          <div class="actions">
+            <button class="btn btn-main" id="connectBtn" type="button" style="width:auto;min-width:150px">Ativar conexao</button>
+            <button class="btn btn-sm" id="disconnectBtn" type="button" style="display:none">Desconectar</button>
+          </div>
+          <div class="log" id="connLog" style="margin-top:16px"><div>Pronto</div></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-holo">
+        <div class="head">
+          <h2>Holograma</h2>
+          <p>Patch estilo Kurama. Reinicia o jogo apos aplicar</p>
+        </div>
+        <div class="card" style="max-width:560px">
+          <div class="seg" id="holoGame">
+            <button type="button" class="on" data-g="normal">Free Fire</button>
+            <button type="button" data-g="max">Free Fire MAX</button>
+          </div>
+          <div class="toggle-row">
+            <div><h4>Holograma</h4><p>Ativa o visual holografico no mapa</p></div>
+            <button class="switch" type="button" id="swHolo"></button>
+          </div>
+          <div class="toggle-row">
+            <div><h4>Gloo</h4><p>Patch Gloo (hex Kurama)</p></div>
+            <button class="switch" type="button" id="swGloo"></button>
+          </div>
+          <div class="actions">
+            <button class="btn btn-main" id="holoApply" type="button" style="width:auto;min-width:150px">Aplicar</button>
+            <button class="btn btn-sm" id="holoRestore" type="button">Restaurar original</button>
+            <button class="btn btn-sm" id="holoDiag" type="button">Diagnostico</button>
+          </div>
+          <div class="log" id="holoLog"><div>Aguardando</div></div>
+          <div class="key-display">Key: kurama-holo-test</div>
+        </div>
+      </section>
+
+      <section class="page" id="page-about">
+        <div class="head"><h2>Sobre</h2><p>KABE PRIVATE v1.0</p></div>
+        <div class="card" style="max-width:560px">
+          <ul class="list">
+            <li><span><b>Modo real</b></span><span>rode <code>node server.js</code></span></li>
+            <li><span><b>SSH</b></span><span>MagiskSSH (chave RSA)</span></li>
+            <li><span><b>HS</b></span><span>injecao base64</span></li>
+            <li><span><b>Holograma</b></span><span>patch Kurama</span></li>
+            <li><span><b>Login demo</b></span><span><code>admin / 1234</code></span></li>
+          </ul>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var NAV=[
+    {id:'home',label:'Inicio',svg:'<path d="M4 11.5L12 4l8 7.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-8.5z"/>'},
+    {id:'hs',label:'HS',svg:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>'},
+    {id:'conn',label:'SSH',svg:'<path d="M5 12a7 7 0 0 1 14 0"/><path d="M8.5 12a3.5 3.5 0 0 1 7 0"/><circle cx="12" cy="12" r="1.2"/>'},
+    {id:'holo',label:'Holo',svg:'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>'},
+    {id:'about',label:'Sobre',svg:'<circle cx="12" cy="12" r="8"/><path d="M12 8h.01M11 12h1v4h1"/>'}
+  ];
+  var TITLES={home:'Inicio / Visao Geral',hs:'HS / Injecao',conn:'Conexao / SSH',holo:'Holograma / Patch',about:'Sobre / Info'};
+  var HS_MODES={
+    limpo:{label:'Limpo (Original)',desc:'Restaura o arquivo original.'},
+    hsalto:{label:'HS Alto',desc:'Substitui pelo mod HS Alto.'},
+    hsaltoplus:{label:'HS Alto+',desc:'Mod HS Alto forte.'},
+    hsneck:{label:'HS Pescoco',desc:'Mod HS Pescoco.'}
+  };
+  var state={live:false,ssh:false,auth:'key',busy:false,holoGame:'normal',onlineSince:null,timer:null};
+  var ws=null,pending=[];
+  function $(id){return document.getElementById(id);}
+  function ts(){var d=new Date(),p=function(n){return(n<10?'0':'')+n;};return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}
+  function log(el,msg,kind){
+    if(!el)return;
+    if(el.children.length===1&&(el.children[0].textContent==='Aguardando...'||el.children[0].textContent==='Pronto.')){el.innerHTML='';}
+    var d=document.createElement('div');
+    if(kind==='ok')d.className='ok';
+    if(kind==='err')d.className='err';
+    d.textContent='['+ts()+'] '+msg;
+    el.appendChild(d);
+    el.scrollTop=el.scrollHeight;
+  }
+  function clearLog(el,ph){if(el)el.innerHTML='<div>'+(ph||'Aguardando...')+'</div>';}
+  function go(name){
+    document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+    document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
+    var pg=$('page-'+name);if(pg)pg.classList.add('active');
+    var nb=document.querySelector('.nav-btn[data-page="'+name+'"]');if(nb)nb.classList.add('active');
+    $('crumb').textContent=TITLES[name]||name;
+  }
+  function buildNav(){
+    var nav=$('nav');
+    var lbl=document.createElement('div');lbl.className='nav-label';lbl.textContent='Menu';nav.appendChild(lbl);
+    NAV.forEach(function(n){
+      var b=document.createElement('button');
+      b.type='button';b.className='nav-btn';b.setAttribute('data-page',n.id);
+      b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+n.svg+'</svg><span>'+n.label+'</span>';
+      b.addEventListener('click',function(){go(n.id);});
+      nav.appendChild(b);
+    });
+  }
+  document.querySelectorAll('[data-go]').forEach(function(b){b.addEventListener('click',function(){go(b.getAttribute('data-go'));});});
+  function bindSeg(el,key){
+    el.querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click',function(){
+        el.querySelectorAll('button').forEach(function(x){x.classList.remove('on');});
+        b.classList.add('on');
+        state[key]=b.getAttribute('data-g');
+      });
+    });
+  }
+  bindSeg($('holoGame'),'holoGame');
+  function setEngineUI(){
+    var pill=$('enginePill'),txt=$('engineText');
+    pill.className='pill';
+    if(state.live&&state.ssh){
+      pill.classList.add('on');
+      txt.textContent='SSH OK';
+      $('statConn').textContent='Online';
+      $('connBadge').className='badge on';
+      $('connBadgeText').textContent='Conectado';
+      $('connectBtn').style.display='none';
+      $('disconnectBtn').style.display='inline-flex';
+      if(!state.onlineSince){
+        state.onlineSince=Date.now();
+        if(state.timer)clearInterval(state.timer);
+        state.timer=setInterval(function(){
+          var s=Math.floor((Date.now()-state.onlineSince)/1000);
+          var h=Math.floor(s/3600);s%=3600;var m=Math.floor(s/60);s%=60;
+          var p=function(n){return(n<10?'0':'')+n;};
+          $('statTime').textContent=p(h)+':'+p(m)+':'+p(s);
+        },1000);
+      }
+    }else if(state.live){
+      pill.classList.add('warn');
+      txt.textContent='LIVE';
+      $('statConn').textContent='Offline';
+      $('connBadge').className='badge';
+      $('connBadgeText').textContent='Desconectado';
+      $('connectBtn').style.display='inline-flex';
+      $('connectBtn').textContent='Ativar conexao';
+      $('connectBtn').disabled=false;
+      $('disconnectBtn').style.display='none';
+      state.onlineSince=null;
+    }else{
+      pill.classList.add('warn');
+      txt.textContent='DEMO';
+      $('statConn').textContent='Demo';
+      $('connBadge').className='badge';
+      $('connBadgeText').textContent='Demo';
+      $('connectBtn').style.display='inline-flex';
+      $('disconnectBtn').style.display='none';
+    }
+  }
+  function connectEngine(){
+    if(location.protocol==='file:'){state.live=false;setEngineUI();return;}
+    try{ws=new WebSocket((location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/ws');}
+    catch(e){state.live=false;setEngineUI();return;}
+    ws.onopen=function(){state.live=true;setEngineUI();while(pending.length){try{ws.send(JSON.stringify(pending.shift()));}catch(e){}}};
+    ws.onclose=function(){state.live=false;state.ssh=false;setEngineUI();setTimeout(connectEngine,2500);};
+    ws.onerror=function(){};
+    ws.onmessage=function(ev){var msg;try{msg=JSON.parse(ev.data);}catch(e){return;}onMsg(msg);};
+  }
+  function send(obj){
+    if(ws&&ws.readyState===1){ws.send(JSON.stringify(obj));}
+    else{pending.push(obj);if(!state.live)log($('connLog'),'Servidor offline. Rode node server.js','err');}
+  }
+  function onMsg(msg){
+    if(msg.type==='engine_status'){state.live=msg.mode==='live';state.ssh=!!msg.ssh;setEngineUI();}
+    else if(msg.type==='ssh_status'){
+      if(msg.status==='connected'){state.ssh=true;setEngineUI();log($('connLog'),'Conectado','ok');}
+      else if(msg.status==='disconnected'){state.ssh=false;setEngineUI();log($('connLog'),'Desconectado');}
+      else if(msg.status==='error'){state.ssh=false;setEngineUI();log($('connLog'),msg.msg||'Falha SSH','err');$('connectBtn').disabled=false;$('connectBtn').textContent='Ativar conexao';}
+    }
+    else if(msg.type==='exec_done'){
+      if(msg.error)log($('connLog'),msg.error,'err');
+      else if(msg.root===true)log($('connLog'),'Root OK','ok');
+      else if(msg.root===false)log($('connLog'),'Sem root','err');
+    }
+    else if(msg.type==='hs_list'){renderHS(msg.modes||{});}
+    else if(msg.type==='hs_start'){clearLog($('hsLog'));log($('hsLog'),'Injetando '+msg.mode+'...');}
+    else if(msg.type==='hs_done'){state.busy=false;setHsBtns(true);if(msg.ok)log($('hsLog'),'Sucesso — '+msg.mode+' ('+msg.files+' arquivo(s))','ok');else log($('hsLog'),msg.error||'Falha','err');}
+    else if(msg.type==='game_stop_done'){if(msg.ok)log($('holoLog'),'Jogo encerrado. Abra novamente.','ok');else log($('holoLog'),msg.error||'Falha','err');}
+    else if(msg.type==='holo_start'){clearLog($('holoLog'));log($('holoLog'),'Executando...');}
+    else if(msg.type==='holo_done'){
+      state.busy=false;
+      if(msg.ok){
+        if(msg.out)String(msg.out).split(/\r?\n/).forEach(function(ln){if(ln.trim())log($('holoLog'),ln.trim());});
+        log($('holoLog'),'Concluido — abra o jogo de novo','ok');
+      }else log($('holoLog'),msg.error||'Falha','err');
+    }
+  }
+  function renderHS(modes){
+    var grid=$('hsGrid');grid.innerHTML='';
+    Object.keys(HS_MODES).forEach(function(id){
+      var info=modes[id]||HS_MODES[id];
+      var size=info.files&&info.files[0]?info.files[0].size:0;
+      var card=document.createElement('div');card.className='fcard';
+      card.innerHTML='<div class="ico">HS</div><h3></h3><p></p><div class="meta"></div><button class="btn btn-sm btn-main" type="button" style="width:auto">Injetar</button>';
+      card.querySelector('h3').textContent=info.label||HS_MODES[id].label;
+      card.querySelector('p').textContent=info.desc||HS_MODES[id].desc;
+      card.querySelector('.meta').textContent=size?size+' B':id;
+      card.querySelector('button').addEventListener('click',function(){injectHS(id);});
+      grid.appendChild(card);
+    });
+  }
+  function setHsBtns(on){document.querySelectorAll('#hsGrid button').forEach(function(b){b.disabled=!on;});}
+  function injectHS(mode){
+    if(!state.live){log($('hsLog'),'Rode node server.js','err');return;}
+    if(!state.ssh){log($('hsLog'),'Conecte o SSH primeiro','err');go('conn');return;}
+    if(state.busy)return;
+    state.busy=true;setHsBtns(false);clearLog($('hsLog'));
+    send({type:'hs_inject_b64',data:{mode:mode}});
+  }
+  function needSsh(logEl){if(!state.live){log(logEl,'Rode node server.js','err');return false;}if(!state.ssh){log(logEl,'Conecte o SSH primeiro','err');go('conn');return false;}return true;}
+  function setAuth(m){state.auth=m;$('authKeyBtn').classList.toggle('on',m==='key');$('authPassBtn').classList.toggle('on',m==='pass');$('keyField').style.display=m==='key'?'block':'none';$('passField').style.display=m==='pass'?'block':'none';if(m==='key')$('keyBox').style.display='block';}
+  $('authKeyBtn').addEventListener('click',function(){setAuth('key');});
+  $('authPassBtn').addEventListener('click',function(){setAuth('pass');});
+  function loadForm(){try{var c=JSON.parse(localStorage.getItem('kabe_ssh')||'{}');if(c.host)$('sshHost').value=c.host;if(c.port)$('sshPort').value=c.port;if(c.user)$('sshUser').value=c.user;if(c.auth)setAuth(c.auth);if(c.pass)$('sshPass').value=c.pass;if(c.key){$('keyBox').value=c.key;$('keyBox').style.display='block';}}catch(e){}}
+  function saveForm(){try{localStorage.setItem('kabe_ssh',JSON.stringify({host:$('sshHost').value.trim(),port:$('sshPort').value.trim(),user:$('sshUser').value.trim(),auth:state.auth,pass:$('sshPass').value,key:$('keyBox').value}));}catch(e){}}
+  $('loadKeyBtn').addEventListener('click',function(){
+    fetch('/api/key').then(function(r){if(!r.ok)throw new Error('Chave nao encontrada');return r.json();})
+      .then(function(j){$('keyBox').value=j.key||'';$('keyBox').style.display='block';log($('connLog'),'Chave carregada','ok');saveForm();})
+      .catch(function(e){log($('connLog'),e.message||'Falha','err');});
+  });
+  function doConnect(data){
+    $('connectBtn').disabled=true;$('connectBtn').textContent='Conectando...';clearLog($('connLog'),'Conectando...');
+    send({type:'ssh_connect',data:data});
+    setTimeout(function(){if(!state.ssh){$('connectBtn').disabled=false;$('connectBtn').textContent='Ativar conexao';}},25000);
+  }
+  $('connectBtn').addEventListener('click',function(){
+    if(!state.live){log($('connLog'),'Rode node server.js','err');return;}
+    saveForm();
+    var data={host:$('sshHost').value.trim(),port:$('sshPort').value.trim()||'22',user:$('sshUser').value.trim()||'root',auth:state.auth,pass:$('sshPass').value,key:$('keyBox').value};
+    if(state.auth==='key'&&!data.key.trim()){
+      fetch('/api/key').then(function(r){return r.ok?r.json():Promise.reject();})
+        .then(function(j){data.key=j.key||'';$('keyBox').value=data.key;if(!data.key){log($('connLog'),'Cole a chave','err');return;}doConnect(data);})
+        .catch(function(){log($('connLog'),'Cole ou carregue a chave','err');});
+      return;
+    }
+    doConnect(data);
+  });
+  $('disconnectBtn').addEventListener('click',function(){send({type:'ssh_disconnect'});state.ssh=false;setEngineUI();log($('connLog'),'Desconectado');});
+  var holoOn=false,glooOn=false;
+  $('swHolo').addEventListener('click',function(){holoOn=!holoOn;$('swHolo').classList.toggle('on',holoOn);});
+  $('swGloo').addEventListener('click',function(){glooOn=!glooOn;$('swGloo').classList.toggle('on',glooOn);});
+  $('holoApply').addEventListener('click',function(){
+    if(!needSsh($('holoLog')))return;if(state.busy)return;state.busy=true;
+    clearLog($('holoLog'));var mode=1;if(glooOn)mode=2;
+    send({type:'holo_patch',data:{game:state.holoGame,mode:mode}});
+  });
+  $('holoRestore').addEventListener('click',function(){
+    if(!needSsh($('holoLog')))return;if(state.busy)return;state.busy=true;
+    clearLog($('holoLog'));send({type:'holo_restore',data:{game:state.holoGame}});
+  });
+  $('holoDiag').addEventListener('click',function(){
+    if(!needSsh($('holoLog')))return;if(state.busy)return;state.busy=true;
+    clearLog($('holoLog'));send({type:'holo_diag',data:{game:state.holoGame}});
+  });
+  buildNav();
+  renderHS({});
+  loadForm();
+  setAuth('key');
+  setEngineUI();
+})();
+</script>
+</body>
+</html>
