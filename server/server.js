@@ -105,7 +105,18 @@ wssShell.on('connection', (ws) => {
 });
 
 // Serve o site que fica na pasta acima (kabe-private/index.html)
-app.use(express.static(path.join(__dirname, '..')));
+const STATIC_DIR = path.join(__dirname, '..');
+app.use(express.static(STATIC_DIR));
+
+// Debug: listar arquivos na raiz
+app.get('/api/debug', (req, res) => {
+  try {
+    const files = fs.readdirSync(STATIC_DIR);
+    res.json({ dir: STATIC_DIR, files });
+  } catch (e) {
+    res.json({ error: e.message, dir: STATIC_DIR });
+  }
+});
 
 // Carrega a chave privada salva na máquina (para não precisar colar)
 const KEY_CANDIDATES = [
@@ -205,6 +216,71 @@ app.post('/api/ssh/generate-keys', (req, res) => {
   } catch (e) {
     res.status(500).json({ error: 'Erro ao gerar chaves: ' + e.message });
   }
+});
+
+// ── KABE Agent API (reversa: phone → server) ─────────────
+const agents = new Map(); // key → { ws, pending, output }
+
+app.post('/api/agent/register', (req, res) => {
+  const { key, id } = req.body;
+  if (!key) return res.status(400).json({ error: 'Key obrigatoria' });
+  if (!agents.has(key)) {
+    agents.set(key, { id: id || 'unknown', pending: [], output: [], lastSeen: Date.now() });
+  }
+  agents.get(key).lastSeen = Date.now();
+  res.json({ ok: true });
+});
+
+app.get('/api/agent/poll', (req, res) => {
+  const { key } = req.query;
+  const agent = agents.get(key);
+  if (!agent) return res.json(null);
+  agent.lastSeen = Date.now();
+  if (agent.pending.length > 0) {
+    res.json(agent.pending.shift());
+  } else {
+    res.json(null);
+  }
+});
+
+app.post('/api/agent/command', (req, res) => {
+  const { key, cmd } = req.body;
+  const agent = agents.get(key);
+  if (!agent) return res.status(404).json({ error: 'Agent nao conectado' });
+  const id = Date.now();
+  agent.pending.push({ id, cmd });
+  res.json({ ok: true, id });
+});
+
+app.post('/api/agent/output', (req, res) => {
+  const { key, id, exit, output } = req.body;
+  const agent = agents.get(key);
+  if (!agent) return res.status(404).json({ error: 'Agent nao encontrado' });
+  const decoded = (output || '').replace(/§/g, '\n');
+  agent.output.push({ id: parseInt(id), exit: parseInt(exit), output: decoded, time: Date.now() });
+  res.json({ ok: true });
+});
+
+app.get('/api/agent/output', (req, res) => {
+  const { key } = req.query;
+  const agent = agents.get(key);
+  if (!agent) return res.json([]);
+  const out = agent.output.splice(0);
+  res.json(out);
+});
+
+app.get('/api/agent/list', (req, res) => {
+  const list = [];
+  agents.forEach((v, k) => {
+    list.push({ key: k, id: v.id, lastSeen: v.lastSeen, online: (Date.now() - v.lastSeen) < 15000 });
+  });
+  res.json(list);
+});
+
+app.post('/api/agent/config', (req, res) => {
+  const { key, serverUrl } = req.body;
+  if (!key || !serverUrl) return res.status(400).json({ error: 'Key e serverUrl obrigatorios' });
+  res.json({ ok: true, server: serverUrl, key });
 });
 
 // ── Estado SSH ───────────────────────────────────────────

@@ -1,0 +1,48 @@
+#!/system/bin/sh
+# KABE Agent Setup
+KEY_FILE="/data/adb/kabe/key"
+CONFIG_FILE="/data/adb/kabe/config"
+
+mkdir -p /data/adb/kabe
+chmod 700 /data/adb/kabe
+
+echo "=== KABE Agent Setup ==="
+echo ""
+
+# Server URL
+if [ -f "$CONFIG_FILE" ]; then
+    OLD_SERVER=$(cat "$CONFIG_FILE" | grep "^SERVER=" | cut -d= -f2-)
+    echo "Server atual: $OLD_SERVER"
+fi
+printf "Server URL (ex: http://192.168.0.10:3000): "
+read SERVER_INPUT
+if [ -n "$SERVER_INPUT" ]; then
+    SERVER="$SERVER_INPUT"
+else
+    SERVER="$OLD_SERVER"
+fi
+echo "SERVER=$SERVER" > "$CONFIG_FILE"
+
+# Key
+if [ -f "$KEY_FILE" ]; then
+    OLD_KEY=$(cat "$KEY_FILE")
+    echo "Key atual: $OLD_KEY"
+    printf "Manter esta key? [S/n]: "
+    read KEEP
+    if [ "$KEEP" = "n" ] || [ "$KEEP" = "N" ]; then
+        KEY="KABE-$(cat /dev/urandom | tr -dc 'A-Z0-9' | head -c 16)"
+        echo "$KEY" > "$KEY_FILE"
+    fi
+else
+    KEY="KABE-$(cat /dev/urandom | tr -dc 'A-Z0-9' | head -c 16)"
+    echo "$KEY" > "$KEY_FILE"
+fi
+chmod 600 "$KEY_FILE"
+
+echo ""
+echo "=== Configurado ==="
+echo "Server: $SERVER"
+echo "Key: $(cat $KEY_FILE)"
+echo ""
+echo "Agora cole esta key no painel KABE PRIVATE"
+echo "E inicie o agent: kabe-agent &"

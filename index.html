@@ -749,16 +749,12 @@ document.getElementById('loginEye').addEventListener('click',function(){
       <section class="page" id="page-remote">
         <div class="head">
           <h2 class="grad-text">Acesso Remoto</h2>
-          <p>Conecte ao celular via modulo KABE (porta 2222)</p>
+          <p>Conexao reversa — o celular conecta ao servidor automaticamente</p>
         </div>
         <div class="card" style="max-width:560px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
             <h3>KABE Shell</h3>
             <div class="badge" id="shellBadge"><i></i><span id="shellBadgeText">Desconectado</span></div>
-          </div>
-          <div class="row2">
-            <div class="field" style="margin:0"><label>Host do celular</label><input id="shellHost" placeholder="192.168.0.100"></div>
-            <div class="field" style="margin:0"><label>Porta</label><input id="shellPort" type="number" value="2222"></div>
           </div>
           <div class="field">
             <label>Key KABE</label>
@@ -774,9 +770,17 @@ document.getElementById('loginEye').addEventListener('click',function(){
           <div id="shellTerminal" style="display:none;margin-top:16px">
             <div style="background:#000;border:1px solid var(--stroke);border-radius:10px;padding:12px;font-family:'Courier New',monospace;font-size:12px;color:#2dd4a7;max-height:400px;overflow-y:auto;white-space:pre-wrap;word-break:break-all" id="shellOutput"></div>
             <div style="display:flex;gap:8px;margin-top:8px">
-              <input id="shellCmd" type="text" placeholder="Digite um comando..." style="flex:1;font-family:'Courier New',monospace;font-size:12px" onkeydown="if(event.key==='Enter')sendShellCmd()">
+              <input id="shellCmd" type="text" placeholder="root@device:~$" style="flex:1;font-family:'Courier New',monospace;font-size:12px" onkeydown="if(event.key==='Enter')sendShellCmd()">
               <button class="btn btn-main btn-sm" type="button" onclick="sendShellCmd()">Enviar</button>
             </div>
+          </div>
+          <div style="margin-top:16px;padding:14px;background:rgba(255,45,62,.06);border:1px solid rgba(255,45,62,.2);border-radius:10px;font-size:12px;color:var(--muted)">
+            <b style="color:var(--text)">Como configurar:</b><br>
+            1. Instale o modulo KABE no Magisk/KernelSU<br>
+            2. No terminal do celular: <code style="color:#ff8b93">kabe-setup</code><br>
+            3. Cole o Server URL: <code style="color:#ff8b93" id="serverUrlDisplay"></code><br>
+            4. A key sera gerada — cole aqui em cima<br>
+            5. O agent conecta automaticamente ao servidor
           </div>
         </div>
       </section>
@@ -1065,64 +1069,66 @@ document.getElementById('loginEye').addEventListener('click',function(){
     if(!needSsh($('holoLog')))return;if(state.busy)return;state.busy=true;
     clearLog($('holoLog'));send({type:'holo_restore',data:{game:state.holoGame}});
   });
-  // ── Remote Shell ─────────────────────────────────────
-  var shellWs=null,shellConnected=false;
+  // ── Remote Shell (Agent reverso) ──────────────────────
+  var shellKey='',shellPolling=null,shellConnected=false;
   function shellSetUI(connected){
     shellConnected=connected;
     var badge=$('shellBadge'),txt=$('shellBadgeText');
     badge.className='badge '+(connected?'on':'');
-    txt.textContent=connected?'Conectado':'Desconectado';
+    txt.textContent=connected?'Agent conectado':'Desconectado';
     $('shellConnect').style.display=connected?'none':'inline-flex';
     $('shellDisconnect').style.display=connected?'inline-flex':'none';
     $('shellTerminal').style.display=connected?'block':'none';
   }
   function shellConnect(){
-    var host=$('shellHost').value.trim();
-    var port=$('shellPort').value.trim()||'2222';
-    var key=$('shellKey').value.trim();
-    if(!host||!key){$('shellOutput').textContent='Host e key obrigatorios';return;}
-    if(shellWs){try{shellWs.close();}catch(e){}}
-    $('shellOutput').textContent='Conectando...';
-    var wsUrl=(location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/ws/shell';
-    shellWs=new WebSocket(wsUrl);
-    shellWs.onopen=function(){
-      shellWs.send(JSON.stringify({type:'connect',data:{host:host,port:parseInt(port),key:key}}));
-    };
-    shellWs.onmessage=function(ev){
-      var msg;try{msg=JSON.parse(ev.data);}catch(e){return;}
-      if(msg.type==='connected'){
-        shellSetUI(true);
-        $('shellOutput').textContent='Conectado ao device.\n';
-      }else if(msg.type==='output'){
-        $('shellOutput').textContent+=msg.data;
-        $('shellOutput').scrollTop=$('shellOutput').scrollHeight;
-      }else if(msg.type==='error'){
-        $('shellOutput').textContent+='\nERRO: '+msg.msg+'\n';
-        shellSetUI(false);
-      }else if(msg.type==='disconnected'){
-        $('shellOutput').textContent+='\nDesconectado.\n';
-        shellSetUI(false);
+    shellKey=$('shellKey').value.trim();
+    if(!shellKey){$('shellOutput').textContent='Key obrigatoria';return;}
+    // Check if agent is registered
+    fetch('/api/agent/list').then(function(r){return r.json();}).then(function(list){
+      var found=list.find(function(a){return a.key===shellKey && a.online;});
+      if(!found){
+        $('shellOutput').textContent='Agent nao encontrado. Instale o modulo no celular e configure a key.';
+        return;
       }
-    };
-    shellWs.onerror=function(){
-      $('shellOutput').textContent+='Erro de conexao WebSocket.\n';
-      shellSetUI(false);
-    };
-    shellWs.onclose=function(){shellSetUI(false);};
+      shellSetUI(true);
+      $('shellOutput').textContent='Agent conectado ('+found.id+'). Digite comandos abaixo.\n\n';
+      shellStartPoll();
+    }).catch(function(){
+      $('shellOutput').textContent='Erro ao verificar agent.';
+    });
+  }
+  function shellStartPoll(){
+    if(shellPolling)clearInterval(shellPolling);
+    shellPolling=setInterval(function(){
+      fetch('/api/agent/output?key='+encodeURIComponent(shellKey)).then(function(r){return r.json();}).then(function(outs){
+        outs.forEach(function(o){
+          var prefix=o.exit===0?'$ ':'ERR ';
+          $('shellOutput').textContent+=prefix+o.output+'\n';
+          $('shellOutput').scrollTop=$('shellOutput').scrollHeight;
+        });
+      });
+    },1500);
   }
   function shellDisconnect(){
-    if(shellWs){shellWs.send(JSON.stringify({type:'disconnect'}));shellWs.close();shellWs=null;}
+    if(shellPolling){clearInterval(shellPolling);shellPolling=null;}
     shellSetUI(false);
+    $('shellOutput').textContent='';
   }
   function sendShellCmd(){
     var cmd=$('shellCmd').value;
-    if(!cmd||!shellWs||!shellConnected)return;
-    shellWs.send(JSON.stringify({type:'input',data:cmd+'\n'}));
+    if(!cmd||!shellConnected)return;
+    $('shellOutput').textContent+='$ '+cmd+'\n';
     $('shellCmd').value='';
+    fetch('/api/agent/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:shellKey,cmd:cmd})})
+      .then(function(r){return r.json();})
+      .then(function(d){if(!d.ok)$('shellOutput').textContent+='Erro: '+d.error+'\n';});
   }
   $('shellConnect').addEventListener('click',shellConnect);
   $('shellDisconnect').addEventListener('click',shellDisconnect);
   $('shellCmd').addEventListener('keydown',function(e){if(e.key==='Enter')sendShellCmd();});
+  // Show server URL
+  var sUrl=document.getElementById('serverUrlDisplay');
+  if(sUrl)sUrl.textContent=location.origin;
   buildNav();
   renderHS({});
   loadForm();
