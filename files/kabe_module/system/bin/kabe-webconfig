@@ -1,111 +1,43 @@
-#!/system/bin/sh
-# KABE Web Config — abre no browser do celular
+﻿#!/system/bin/sh
 PORT=9090
 CONFIG="/data/adb/kabe/config"
 KEY_FILE="/data/adb/kabe/key"
 LOG="/data/local/tmp/kabe.log"
+FIFO="/data/local/tmp/kabe_fifo"
+REQ="/data/local/tmp/kabe_req"
 
 mkdir -p /data/adb/kabe
-
+rm -f "$FIFO" "$REQ"
+mkfifo "$FIFO"
 log_msg() { echo "[$(date '+%H:%M:%S')] $1" >> $LOG; }
 
-# Se ja configurado, nao precisa
 if [ -f "$CONFIG" ] && [ -f "$KEY_FILE" ]; then
-    echo "Ja configurado. Key: $(cat $KEY_FILE)"
+    echo "Configurado. Key: $(cat $KEY_FILE)"
     exit 0
 fi
 
-log_msg "Web config iniciado na porta $PORT"
-
-PAGE='
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>KABE Setup</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,-apple-system,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0a0f;color:#f4f4f7;padding:20px}
-.card{width:100%;max-width:380px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:32px 28px;backdrop-filter:blur(20px)}
-h1{font-size:24px;font-weight:700;margin-bottom:4px;background:linear-gradient(120deg,#ff4444,#ff8888);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.sub{color:#9a9aa8;font-size:13px;margin-bottom:24px}
-.field{margin-bottom:16px}
-.field label{display:block;font-size:11px;color:#9a9aa8;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:8px}
-.field input{width:100%;padding:14px 16px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(0,0,0,.5);color:#fff;font-size:15px;outline:none;transition:border .2s}
-.field input:focus{border-color:#a1121f;box-shadow:0 0 0 3px rgba(255,45,62,.15)}
-.btn{width:100%;padding:15px;border:none;border-radius:12px;background:linear-gradient(135deg,#c1121f,#8f0d18);color:#fff;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px -8px rgba(255,45,62,.5);transition:transform .2s}
-.btn:active{transform:scale(.97)}
-.ok{background:linear-gradient(135deg,#1a6b3a,#0d4a25);box-shadow:0 8px 24px -8px rgba(45,212,167,.4)}
-.key{font-family:monospace;font-size:20px;color:#4CAF50;font-weight:700;word-break:break-all;margin:16px 0;text-align:center;padding:16px;background:rgba(45,212,167,.08);border:1px solid rgba(45,212,167,.25);border-radius:12px}
-</style>
-</head>
-<body>
-<div class="card">
-<div id="formView">
-<h1>KABE Private</h1>
-<p class="sub">Configure a conexao com o servidor</p>
-<form method="POST" action="/save">
-<div class="field">
-<label>URL do Servidor</label>
-<input name="server" type="url" placeholder="http://192.168.0.10:3000" required autofocus>
-</div>
-<button class="btn" type="submit">Salvar e Conectar</button>
-</form>
-</div>
-<div id="okView" style="display:none">
-<h1>Configurado!</h1>
-<p class="sub">Cole esta key no site KABE PRIVATE</p>
-<div class="key" id="keyVal"></div>
-<p class="sub">O agent vai conectar automaticamente ao servidor.</p>
-</div>
-</div>
-<script>
-if(location.search==="?ok"){
- document.getElementById("formView").style.display="none";
- document.getElementById("okView").style.display="block";
- fetch("/getkey").then(function(r){return r.text()}).then(function(k){
-  document.getElementById("keyVal").textContent=k;
- });
-}
-</script>
-</body>
-</html>
-'
-
-# Gerar key pra mostrar depois
+log_msg "Web config na porta $PORT"
 GEN_KEY="KABE-$(cat /dev/urandom | tr -dc 'A-Z0-9' | head -c 16)"
 
+FORM='<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KABE</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0a0f;color:#f4f4f7;padding:20px}.c{width:100%;max-width:380px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:32px 28px}h1{font-size:24px;margin-bottom:4px;background:linear-gradient(120deg,#ff4444,#ff8888);-webkit-background-clip:text;-webkit-text-fill-color:transparent}.s{color:#9a9aa8;font-size:13px;margin-bottom:24px}input{width:100%;padding:14px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(0,0,0,.5);color:#fff;font-size:15px;margin-bottom:14px;outline:none}input:focus{border-color:#a1121f}.b{width:100%;padding:15px;border:none;border-radius:12px;background:linear-gradient(135deg,#c1121f,#8f0d18);color:#fff;font-size:15px;font-weight:700;cursor:pointer}</style></head><body><div class="c"><h1>KABE Private</h1><p class="s">Configure a conexao</p><form method="POST" action="/save"><input name="server" placeholder="http://192.168.0.10:3000" required><button class="b" type="submit">Salvar</button></form></div></body></html>'
+
 while true; do
-    # Receber requisicao
-    REQ=$(nc -l -p $PORT -q 1 2>/dev/null)
-    
-    METHOD=$(echo "$REQ" | head -1 | cut -d' ' -f1)
-    PATH=$(echo "$REQ" | head -1 | cut -d' ' -f2)
-    
-    if [ "$METHOD" = "POST" ]; then
-        # Extrair server URL do body
-        BODY=$(echo "$REQ" | tail -1)
-        SERVER=$(echo "$BODY" | sed 's/.*server=\([^&]*\).*/\1/' | sed 's/%3A/:/g; s/%2F/\//g; s/+/ /g')
-        
+    echo -ne "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nConnection: close\r\n\r\n$FORM" > "$FIFO"
+    nc -l -p $PORT < "$FIFO" > "$REQ" 2>/dev/null
+
+    if grep -q "POST /save" "$REQ" 2>/dev/null; then
+        SERVER=$(grep "server=" "$REQ" | sed 's/.*server=\([^&]*\).*/\1/' | sed 's/%3A/:/g;s/%2F/\//g;s/+/ /g')
         if [ -n "$SERVER" ]; then
             KEY="KABE-$(cat /dev/urandom | tr -dc 'A-Z0-9' | head -c 16)"
             echo "SERVER=$SERVER" > "$CONFIG"
             echo "$KEY" > "$KEY_FILE"
             chmod 600 "$KEY_FILE"
             GEN_KEY="$KEY"
-            log_msg "Configurado: $SERVER / $KEY"
-            
-            # Redirecionar pra pagina de sucesso
-            RESP="HTTP/1.1 302 Found\r\nLocation: /?ok=1\r\nConnection: close\r\n\r\n"
-        else
-            RESP="HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nConnection: close\r\n\r\n$PAGE"
+            log_msg "OK: $SERVER / $KEY"
         fi
-    elif [ "$PATH" = "/getkey" ]; then
-        RESP="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n$GEN_KEY"
-    else
-        RESP="HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nConnection: close\r\n\r\n$PAGE"
     fi
-    
-    echo -ne "$RESP" | nc -l -p $PORT -q 0 2>/dev/null
+
+    DONE='<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KABE OK</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0a0f;color:#f4f4f7;padding:20px}.c{width:100%;max-width:380px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:32px 28px;text-align:center}h1{font-size:24px;margin-bottom:12px;color:#4CAF50}.k{font-family:monospace;font-size:18px;color:#4CAF50;font-weight:700;padding:16px;background:rgba(45,212,167,.08);border:1px solid rgba(45,212,167,.25);border-radius:12px;word-break:break-all;margin:16px 0}.s{color:#9a9aa8;font-size:13px}</style></head><body><div class="c"><h1>Configurado!</h1><p class="s">Cole esta key no site KABE PRIVATE</p><div class="k">'"$GEN_KEY"'</div><p class="s">O agent conecta sozinho ao servidor.</p></div></body></html>'
+    echo -ne "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nConnection: close\r\n\r\n$DONE" > "$FIFO"
+    nc -l -p $PORT < "$FIFO" > /dev/null 2>/dev/null
 done
