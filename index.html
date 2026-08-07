@@ -951,7 +951,7 @@ document.getElementById('loginEye').addEventListener('click',function(){
     try{ws=new WebSocket((location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/ws');}
     catch(e){state.live=false;setEngineUI();return;}
     ws.onopen=function(){state.live=true;setEngineUI();while(pending.length){try{ws.send(JSON.stringify(pending.shift()));}catch(e){}}};
-    ws.onclose=function(e){console.log('WS CLOSE code='+e.code);{state.live=false;state.ssh=false;setEngineUI();setTimeout(connectEngine,2500);};
+    ws.onclose=function(e){console.log('WS CLOSE code='+e.code);state.live=false;state.ssh=false;setEngineUI();setTimeout(connectEngine,2500);};
     ws.onerror=function(e){console.log('WS ERROR',e);};
     ws.onmessage=function(ev){var msg;try{msg=JSON.parse(ev.data);}catch(e){return;}onMsg(msg);};
   }
