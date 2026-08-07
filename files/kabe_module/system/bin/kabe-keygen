@@ -1,0 +1,30 @@
+#!/system/bin/sh
+# KABE Private - Key Generator
+KEY_FILE="/data/adb/kabe/key"
+
+mkdir -p /data/adb/kabe
+chmod 700 /data/adb/kabe
+
+if [ -f "$KEY_FILE" ]; then
+    echo "=== KABE Key ==="
+    echo "Key: $(cat $KEY_FILE)"
+    echo ""
+    echo "To regenerate:"
+    echo "  rm $KEY_FILE && kabe-keygen"
+    exit 0
+fi
+
+KEY="KABE-$(cat /dev/urandom | tr -dc 'A-Z0-9' | head -c 16)"
+echo "$KEY" > "$KEY_FILE"
+chmod 600 "$KEY_FILE"
+
+echo "=== KABE Key Generated ==="
+echo "Key: $KEY"
+echo ""
+echo "1. Copy this key"
+echo "2. Open KABE PRIVATE panel"
+echo "3. Go to SSH Bridge"
+echo "4. Paste the key in 'Chave Privada'"
+echo "5. Click 'Ativar Conexao'"
+echo ""
+echo "File: $KEY_FILE"

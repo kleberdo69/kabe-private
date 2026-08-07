@@ -15,6 +15,7 @@ const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const net = require('net');
 const { WebSocketServer } = require('ws');
 const { Client } = require('ssh2');
 
@@ -47,6 +48,61 @@ const app = express();
 app.use(express.json());
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws' });
+
+// ── Shell Bridge: WebSocket ↔ TCP (phone module) ───────
+const wssShell = new WebSocketServer({ server, path: '/ws/shell' });
+wssShell.on('connection', (ws) => {
+  let tcpSocket = null;
+  let authenticated = false;
+
+  ws.on('message', (raw) => {
+    let msg;
+    try { msg = JSON.parse(raw); } catch (e) { return; }
+
+    if (msg.type === 'connect' && msg.data) {
+      const { host, port, key } = msg.data;
+      if (!host || !key) { ws.send(JSON.stringify({ type: 'error', msg: 'Host e key obrigatorios' })); return; }
+
+      tcpSocket = net.createConnection(parseInt(port) || 2222, host, () => {
+        tcpSocket.write(key + '\n');
+      });
+
+      tcpSocket.setEncoding('utf8');
+      tcpSocket.on('data', (data) => {
+        if (!authenticated) {
+          if (data.includes('AUTH OK')) {
+            authenticated = true;
+            ws.send(JSON.stringify({ type: 'connected' }));
+          } else if (data.includes('AUTH DENIED')) {
+            ws.send(JSON.stringify({ type: 'error', msg: 'Key invalida ou negada' }));
+            tcpSocket.destroy();
+          }
+        } else {
+          ws.send(JSON.stringify({ type: 'output', data }));
+        }
+      });
+
+      tcpSocket.on('error', (err) => {
+        ws.send(JSON.stringify({ type: 'error', msg: err.message }));
+      });
+
+      tcpSocket.on('close', () => {
+        authenticated = false;
+        ws.send(JSON.stringify({ type: 'disconnected' }));
+      });
+    }
+
+    if (msg.type === 'input' && tcpSocket && authenticated) {
+      tcpSocket.write(msg.data);
+    }
+
+    if (msg.type === 'disconnect') {
+      if (tcpSocket) tcpSocket.destroy();
+    }
+  });
+
+  ws.on('close', () => { if (tcpSocket) tcpSocket.destroy(); });
+});
 
 // Serve o site que fica na pasta acima (kabe-private/index.html)
 app.use(express.static(path.join(__dirname, '..')));

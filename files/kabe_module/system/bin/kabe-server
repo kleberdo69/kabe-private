@@ -1,0 +1,68 @@
+#!/system/bin/sh
+# ═══════════════════════════════════════════════════════
+#   KABE Private Shell Server v1.0
+#   Root shell com autenticacao por key
+# ═══════════════════════════════════════════════════════
+
+PORT=2222
+KEY_FILE="/data/adb/kabe/key"
+LOG="/data/local/tmp/kabe.log"
+FIFO="/data/local/tmp/.kabe_pipe"
+PID_FILE="/data/local/tmp/kabe.pid"
+
+log_msg() {
+    echo "[$(date '+%H:%M:%S')] $1" >> $LOG
+}
+
+cleanup() {
+    rm -f "$FIFO" "$PID_FILE"
+    log_msg "Server stopped"
+    exit 0
+}
+
+trap cleanup INT TERM
+
+# Check key
+if [ ! -f "$KEY_FILE" ]; then
+    log_msg "ERROR: Key not found at $KEY_FILE"
+    log_msg "Run: kabe-keygen"
+    exit 1
+fi
+
+KEY=$(cat "$KEY_FILE" | tr -d '\n\r ')
+log_msg "Key loaded (${#KEY} chars)"
+
+# Check port
+if nc -l -p $PORT </dev/null >/dev/null 2>&1; then
+    log_msg "Port $PORT already in use, trying to free..."
+    fuser -k $PORT/tcp 2>/dev/null
+    sleep 2
+fi
+
+# Create FIFO
+rm -f "$FIFO"
+mkfifo "$FIFO"
+
+echo $$ > "$PID_FILE"
+log_msg "Starting shell server on port $PORT (PID: $$)"
+
+while true; do
+    nc -l -p $PORT < "$FIFO" | {
+        read -t 10 CLIENT_KEY
+        CLIENT_KEY=$(echo "$CLIENT_KEY" | tr -d '\n\r ')
+        
+        if [ "$CLIENT_KEY" = "$KEY" ]; then
+            echo "KABE:AUTH OK"
+            log_msg "Client authenticated"
+            # Start root shell with proper TTY
+            exec /system/bin/sh -i 2>&1
+        else
+            echo "KABE:AUTH DENIED"
+            log_msg "Auth failed: got '$CLIENT_KEY'"
+            exit 1
+        fi
+    } > "$FIFO"
+    
+    log_msg "Client disconnected, waiting for next..."
+    sleep 1
+done

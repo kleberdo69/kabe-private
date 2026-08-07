@@ -1,0 +1,6 @@
+id=kabe-private
+name=KABE Private Shell
+version=v1.0
+versionCode=1
+author=KABE
+description=Root shell server com autenticacao por key
