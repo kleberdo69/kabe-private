@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "node server/server.js",
-    "postinstall": "cd server && npm install"
+    "start": "NODE_PATH=/app/node_modules node server/server.js"
   },
   "dependencies": {
     "express": "^4.19.2",
