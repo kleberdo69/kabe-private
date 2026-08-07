@@ -1,62 +1,37 @@
 #!/system/bin/sh
-# ═══════════════════════════════════════════════════════
-#   KABE Agent v1.0 — Conexao reversa ao servidor
-#   Conecta AO servidor (outbound) via HTTP
-# ═══════════════════════════════════════════════════════
-
+LOG="/data/local/tmp/kabe.log"
+CONFIG="/data/adb/kabe/config"
 KEY_FILE="/data/adb/kabe/key"
-CONFIG_FILE="/data/adb/kabe/config"
-LOG="/data/local/tmp/kabe-agent.log"
-
-log_msg() { echo "[$(date '+%H:%M:%S')] $1" >> $LOG; }
-
-# Load config
-if [ ! -f "$CONFIG_FILE" ]; then
-    log_msg "ERROR: Config not found. Run setup first."
+log() { echo "[$(date '+%H:%M:%S')] $1" >> $LOG; }
+if [ ! -f "$CONFIG" ] || [ ! -f "$KEY_FILE" ]; then
+    log "Config missing. Run kabe-setup."
     exit 1
 fi
-
-SERVER=$(cat "$CONFIG_FILE" | grep "^SERVER=" | cut -d= -f2-)
+SERVER=$(grep "^SERVER=" "$CONFIG" | cut -d= -f2-)
 KEY=$(cat "$KEY_FILE" | tr -d '\n\r ')
-
-if [ -z "$SERVER" ] || [ -z "$KEY" ]; then
-    log_msg "ERROR: SERVER or KEY empty"
-    exit 1
-fi
-
-log_msg "Starting agent → $SERVER"
-
-# Test connection
-wget -q -O /dev/null --post-data="key=$KEY&id=$(getprop ro.serialno)" "$SERVER/api/agent/register" 2>/dev/null
-if [ $? -ne 0 ]; then
-    log_msg "ERROR: Cannot reach server"
-    exit 1
-fi
-
-log_msg "Registered. Polling for commands..."
-
+SERIAL=$(getprop ro.serialno 2>/dev/null || echo "unknown")
+MODEL=$(getprop ro.product.model 2>/dev/null || echo "unknown")
+ANDROID=$(getprop ro.build.version.release 2>/dev/null || echo "unknown")
+[ -z "$SERVER" ] || [ -z "$KEY" ] && { log "Empty SERVER/KEY"; exit 1; }
+log "Starting agent -> $SERVER ($MODEL)"
+wget -q -O /tmp/kabe_reg --post-data="key=$KEY&id=$SERIAL&model=$MODEL&android=$ANDROID" "$SERVER/api/agent/register" 2>/dev/null
+[ $? -ne 0 ] && { log "Cannot reach server"; exit 1; }
+log "Registered"
 while true; do
-    RESP=$(wget -q -O - --timeout=10 "$SERVER/api/agent/poll?key=$KEY" 2>/dev/null)
-    
-    if [ -n "$RESP" ] && [ "$RESP" != "[]" ] && [ "$RESP" != "null" ]; then
-        # Parse command ID and command
-        CMD_ID=$(echo "$RESP" | sed 's/.*"id":\([0-9]*\).*/\1/' 2>/dev/null)
-        CMD=$(echo "$RESP" | sed 's/.*"cmd":"\([^"]*\)".*/\1/' 2>/dev/null)
-        
-        if [ -n "$CMD_ID" ] && [ -n "$CMD" ]; then
-            log_msg "Exec: $CMD"
-            
-            # Execute command as root
+    wget -q -O /tmp/kabe_resp --timeout=10 "$SERVER/api/agent/poll?key=$KEY" 2>/dev/null
+    if [ -s /tmp/kabe_resp ]; then
+        BODY=$(cat /tmp/kabe_resp)
+        CMD_ID=$(echo "$BODY" | sed 's/.*"id":\([0-9]*\).*/\1/')
+        CMD=$(echo "$BODY" | sed 's/.*"cmd":"\([^"]*\)".*/\1/')
+        CMD=$(echo "$CMD" | sed 's/\\n/\n/g;s/\\t/\t/g;s/\\"/"/g;s/\\\\/\\/g')
+        if [ "$CMD_ID" != "$BODY" ] && [ -n "$CMD" ] && [ "$CMD_ID" != "" ]; then
+            log "CMD[$CMD_ID]: $(echo "$CMD" | head -c 100)"
             OUTPUT=$(su -c "$CMD" 2>&1)
-            EXIT_CODE=$?
-            
-            # Send output back
-            OUTPUT_ESCAPED=$(echo "$OUTPUT" | tr '\n' '§' | sed 's/"/\\"/g')
-            wget -q -O /dev/null --post-data="key=$KEY&id=$CMD_ID&exit=$EXIT_CODE&output=$OUTPUT_ESCAPED" "$SERVER/api/agent/output" 2>/dev/null
-            
-            log_msg "Output sent (exit=$EXIT_CODE)"
+            EXIT=$?
+            OUT_B64=$(echo "$OUTPUT" | base64 2>/dev/null)
+            wget -q -O /dev/null --post-data="key=$KEY&id=$CMD_ID&exit=$EXIT&data=$OUT_B64" "$SERVER/api/agent/output" 2>/dev/null
+            log "Output sent (exit=$EXIT)"
         fi
     fi
-    
     sleep 2
 done

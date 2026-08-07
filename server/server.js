@@ -197,11 +197,12 @@ app.post('/api/agent/command', (req, res) => {
 });
 
 app.post('/api/agent/output', (req, res) => {
-  const { key, id, exit, output } = req.body;
+  const { key, id, exit, data } = req.body;
   const agent = agents.get(key);
   if (!agent) return res.status(404).json({ error: 'Agent nao encontrado' });
-  const decoded = (output || '').replace(/§/g, '\n');
-  agent.output.push({ id: parseInt(id), exit: parseInt(exit), output: decoded, time: Date.now() });
+  let output = '';
+  try { output = Buffer.from(data || '', 'base64').toString('utf8'); } catch (e) { output = data || ''; }
+  agent.output.push({ id: parseInt(id), exit: parseInt(exit), output, time: Date.now() });
   res.json({ ok: true });
 });
 
