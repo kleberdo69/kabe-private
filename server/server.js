@@ -137,16 +137,14 @@ app.post('/api/admin/delete-user', (req, res) => {
 // ── API: Gerar chaves SSH ─────────────────────────────────
 app.post('/api/ssh/generate-keys', (req, res) => {
   try {
-    const { generateKeyPairSync } = require('crypto');
+    const { generateKeyPairSync, createPublicKey } = require('crypto');
     const { privateKey, publicKey } = generateKeyPairSync('rsa', {
       modulusLength: 2048,
       publicKeyEncoding: { type: 'spki', format: 'pem' },
-      privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+      privateKeyEncoding: { type: 'pkcs1', format: 'pem' }
     });
-    // Converter public key para formato SSH
-    const sshPub = 'ssh-rsa ' + Buffer.from(
-      require('crypto').createPublicKey(publicKey).export({ type: 'spki', format: 'der' })
-    ).toString('base64') + ' kabe-generated';
+    const der = createPublicKey(publicKey).export({ type: 'spki', format: 'der' });
+    const sshPub = 'ssh-rsa ' + der.toString('base64') + ' kabe';
     res.json({ privateKey, publicKey: sshPub });
   } catch (e) {
     res.status(500).json({ error: 'Erro ao gerar chaves: ' + e.message });
