@@ -1015,18 +1015,22 @@ document.getElementById('loginEye').addEventListener('click',function(){
       var badge=$('linkBadge'),txt=$('linkBadgeText');
       var online=(list||[]).filter(function(d){return d.online;});
       var lk=linkGetKey();
-      var found=online.find(function(d){return d.key===lk;});
+      var found=lk?online.find(function(d){return d.key===lk;}):null;
+
       if(found){
         linkOnline=true;linkKey=found.key;
         badge.className='badge on';
         txt.textContent='ONLINE';
         $('linkDeviceInfo').textContent=found.key+' | '+(found.id||'')+' | IP: '+(found.ip||'');
-        log($('linkLog'),'Dispositivo conectado','ok');
       }else if(online.length>0){
-        linkOnline=false;
+        linkOnline=true;
+        var d=online[0];
+        linkKey=d.key;
         badge.className='badge on';
-        txt.textContent=online.length+' device(s) online';
-        $('linkDeviceInfo').textContent=online.map(function(d){return d.key+' ('+(d.id||'?')+')'}).join(', ');
+        txt.textContent='ONLINE';
+        $('linkDeviceInfo').textContent=d.key+' | '+(d.id||'')+' | IP: '+(d.ip||'');
+        $('linkKey').value=d.key;
+        saveKey(d.key);
       }else{
         linkOnline=false;
         badge.className='badge';
