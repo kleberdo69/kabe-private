@@ -235,7 +235,7 @@ function agentExec(key, cmd, timeout) {
   return new Promise((resolve, reject) => {
     const agent = agents.get(key);
     if (!agent) return reject(new Error('Agent offline'));
-    if (!agent.online) return reject(new Error('Agent offline'));
+    if (!agent.lastSeen || (Date.now() - agent.lastSeen) > 15000) return reject(new Error('Agent offline'));
     const id = Date.now();
     agent.pending.push({ id, cmd });
     let waited = 0;
@@ -259,7 +259,7 @@ app.post('/api/agent/hs-inject', async (req, res) => {
   const { key, mode, game } = req.body;
   if (!key || !mode) return res.status(400).json({ error: 'Key e mode obrigatorios' });
   const agent = agents.get(key);
-  if (!agent || !agent.online) return res.status(400).json({ error: 'Agent offline' });
+  if (!agent || !agent.lastSeen || (Date.now() - agent.lastSeen) > 15000) return res.status(400).json({ error: 'Agent offline' });
 
   const m = HS_MODES[mode];
   if (!m) return res.status(400).json({ error: 'Modo invalido' });
@@ -315,7 +315,7 @@ app.post('/api/agent/holo-patch', async (req, res) => {
   const { key, game, mode } = req.body;
   if (!key) return res.status(400).json({ error: 'Key obrigatoria' });
   const agent = agents.get(key);
-  if (!agent || !agent.online) return res.status(400).json({ error: 'Agent offline' });
+  if (!agent || !agent.lastSeen || (Date.now() - agent.lastSeen) > 15000) return res.status(400).json({ error: 'Agent offline' });
 
   const g = game === 'max' ? 'max' : 'normal';
   const pkg = g === 'max' ? 'com.dts.freefiremax' : 'com.dts.freefireth';
