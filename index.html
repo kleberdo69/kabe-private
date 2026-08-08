@@ -405,7 +405,6 @@ body::after{
 .tabs{display:flex;gap:6px;margin-bottom:14px;padding:5px;background:rgba(0,0,0,.45);border:1px solid var(--stroke2);border-radius:12px}
 .tabs button{flex:1;border:none;background:transparent;border-radius:9px;transition:all .2s;padding:10px}
 .tabs button.on{background:linear-gradient(135deg,rgba(255,45,62,.22),rgba(109,10,18,.4));color:#ffb3ba;box-shadow:inset 0 0 0 1px rgba(255,45,62,.38),0 0 20px -5px rgba(255,45,62,.5)}
-#keyBox{min-height:110px;font-size:11px;resize:vertical;display:none;border-radius:10px}
 .badge{
   display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;
   font-size:10.5px;font-weight:800;background:rgba(0,0,0,.5);border:1px solid var(--stroke);color:var(--muted);
@@ -694,41 +693,6 @@ document.getElementById('loginEye').addEventListener('click',function(){
         <div class="log" id="hsLog"><div>Aguardando</div></div>
       </section>
 
-      <section class="page" id="page-conn">
-        <div class="head">
-          <h2 class="grad-text">Conexao SSH</h2>
-          <p>Acesse via localhost:3000 no PC para SSH funcionar</p>
-        </div>
-        <div class="card" style="max-width:560px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-            <h3>Acesso SSH PORT 22</h3>
-            <div class="badge" id="connBadge"><i></i><span id="connBadgeText">Desconectado</span></div>
-          </div>
-          <div class="row2">
-            <div class="field" style="margin:0"><label>Host (IP do celular)</label><input id="sshHost" value="192.168.1.63"></div>
-            <div class="field" style="margin:0"><label>Porta</label><input id="sshPort" type="number" value="22"></div>
-          </div>
-          <div class="row2 full"><div class="field" style="margin:0"><label>Usuario</label><input id="sshUser" value="root"></div></div>
-          <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:8px;text-transform:uppercase;letter-spacing:2px;font-weight:800">Autenticacao</label>
-          <div class="tabs">
-            <button class="btn btn-sm" id="authPassBtn" type="button">Senha</button>
-            <button class="btn btn-sm on" id="authKeyBtn" type="button">Chave</button>
-          </div>
-          <div class="field" id="passField" style="display:none"><label>Senha</label><input id="sshPass" type="password"></div>
-          <div class="field" id="keyField">
-            <label>Chave privada</label>
-            <textarea id="keyBox" placeholder="Carregada do PC ou cole aqui"></textarea>
-            <button class="btn btn-sm" id="loadKeyBtn" type="button" style="margin-top:9px">Carregar chave do PC</button>
-            <button class="btn btn-sm" id="genSshBtn" type="button" style="margin-top:9px">Gerar chaves SSH</button>
-          </div>
-          <div class="actions">
-            <button class="btn btn-main" id="connectBtn" type="button" style="width:auto;min-width:150px">Ativar conexao</button>
-            <button class="btn btn-sm" id="disconnectBtn" type="button" style="display:none">Desconectar</button>
-          </div>
-          <div class="log" id="connLog" style="margin-top:16px"><div>Pronto</div></div>
-        </div>
-      </section>
-
       <section class="page" id="page-holo">
         <div class="head">
           <h2 class="grad-text">Holograma</h2>
@@ -758,22 +722,15 @@ document.getElementById('loginEye').addEventListener('click',function(){
       <section class="page" id="page-link">
         <div class="head">
           <h2 class="grad-text">Dispositivo</h2>
-          <p>Conexao reversa — funciona de qualquer lugar</p>
+          <p>Conexao — funciona de qualquer lugar</p>
         </div>
         <div class="card" style="max-width:560px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-            <h3>KABE LINK</h3>
+            <h3>KABE PRIVATE</h3>
             <div class="badge" id="linkBadge"><i></i><span id="linkBadgeText">Procurando...</span></div>
           </div>
-          <div class="field" style="margin:0 0 10px"><label>Key do dispositivo</label><input id="linkKey" placeholder="KABE-XXXXXXXX"></div>
+          <div class="field" style="margin:0 0 10px"><label>Key do dispositivo</label><input id="linkKey" placeholder="Cole a key aqui"></div>
           <div style="font-size:12px;color:var(--muted);margin-bottom:8px" id="linkDeviceInfo">...</div>
-          <div class="log" id="linkLog"><div>Aguardando...</div></div>
-        </div>
-        <div class="card" style="max-width:560px">
-          <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:1.4px;margin-bottom:14px">Comando</h3>
-          <div class="field" style="margin:0 0 10px"><label>Shell (root)</label><input id="linkCmd" placeholder="id"></div>
-          <button class="btn btn-main" onclick="linkExecCmd()" style="width:auto;min-width:140px">Executar</button>
-          <div class="log" id="cmdLog"><div>Pronto</div></div>
         </div>
       </section>
 
@@ -839,12 +796,11 @@ document.getElementById('loginEye').addEventListener('click',function(){
   var NAV=[
     {id:'home',label:'Inicio',svg:'<path d="M4 11.5L12 4l8 7.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-8.5z"/>'},
     {id:'hs',label:'HS',svg:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>'},
-    {id:'conn',label:'SSH',svg:'<path d="M5 12a7 7 0 0 1 14 0"/><path d="M8.5 12a3.5 3.5 0 0 1 7 0"/><circle cx="12" cy="12" r="1.2"/>'},
     {id:'link',label:'Link',svg:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>'},
     {id:'holo',label:'Holo',svg:'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>'},
     {id:'about',label:'Sobre',svg:'<circle cx="12" cy="12" r="8"/><path d="M12 8h.01M11 12h1v4h1"/>'}
   ];
-  var TITLES={home:'Inicio / Visao Geral',hs:'HS / Injecao',conn:'Conexao / SSH',link:'Dispositivo / Link',holo:'Holograma / Patch',about:'Sobre / Info'};
+  var TITLES={home:'Inicio / Visao Geral',hs:'HS / Injecao',link:'Dispositivo',holo:'Holograma / Patch',about:'Sobre / Info'};
   var HS_MODES={
     limpo:{label:'Limpo',desc:'Sem HS, jogo original'},
     hsalto:{label:'HS Alto',desc:'Capa acima da cabeca'},
@@ -852,7 +808,7 @@ document.getElementById('loginEye').addEventListener('click',function(){
     hsneck:{label:'HS Pescoco',desc:'Capa no pescoco'},
     hspeito:{label:'HS Peito',desc:'Capa no peito'}
   };
-  var state={live:false,ssh:false,auth:'key',busy:false,holoGame:'normal',hsGame:'normal',onlineSince:null,timer:null};
+  var state={live:false,busy:false,holoGame:'normal',hsGame:'normal',onlineSince:null,timer:null};
   var ws=null,pending=[];
   function $(id){return document.getElementById(id);}
   function ts(){var d=new Date(),p=function(n){return(n<10?'0':'')+n;};return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}
@@ -900,14 +856,10 @@ document.getElementById('loginEye').addEventListener('click',function(){
   function setEngineUI(){
     var pill=$('enginePill'),txt=$('engineText');
     pill.className='pill';
-    if(state.live&&state.ssh){
+    if(linkOnline){
       pill.classList.add('on');
-      txt.textContent='SSH OK';
+      txt.textContent='ONLINE';
       $('statConn').textContent='Online';
-      $('connBadge').className='badge on';
-      $('connBadgeText').textContent='Conectado';
-      $('connectBtn').style.display='none';
-      $('disconnectBtn').style.display='inline-flex';
       if(!state.onlineSince){
         state.onlineSince=Date.now();
         if(state.timer)clearInterval(state.timer);
@@ -922,21 +874,11 @@ document.getElementById('loginEye').addEventListener('click',function(){
       pill.classList.add('warn');
       txt.textContent='LIVE';
       $('statConn').textContent='Offline';
-      $('connBadge').className='badge';
-      $('connBadgeText').textContent='Desconectado';
-      $('connectBtn').style.display='inline-flex';
-      $('connectBtn').textContent='Ativar conexao';
-      $('connectBtn').disabled=false;
-      $('disconnectBtn').style.display='none';
       state.onlineSince=null;
     }else{
       pill.classList.add('warn');
       txt.textContent='DEMO';
       $('statConn').textContent='Demo';
-      $('connBadge').className='badge';
-      $('connBadgeText').textContent='Demo';
-      $('connectBtn').style.display='inline-flex';
-      $('disconnectBtn').style.display='none';
     }
   }
   function connectEngine(){
@@ -944,26 +886,16 @@ document.getElementById('loginEye').addEventListener('click',function(){
     try{ws=new WebSocket((location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/ws');}
     catch(e){state.live=false;setEngineUI();return;}
     ws.onopen=function(){state.live=true;setEngineUI();while(pending.length){try{ws.send(JSON.stringify(pending.shift()));}catch(e){}}};
-    ws.onclose=function(e){console.log('WS CLOSE code='+e.code);state.live=false;state.ssh=false;setEngineUI();setTimeout(connectEngine,2500);};
+    ws.onclose=function(e){state.live=false;setEngineUI();setTimeout(connectEngine,2500);};
     ws.onerror=function(e){console.log('WS ERROR',e);};
     ws.onmessage=function(ev){var msg;try{msg=JSON.parse(ev.data);}catch(e){return;}onMsg(msg);};
   }
   function send(obj){
     if(ws&&ws.readyState===1){ws.send(JSON.stringify(obj));}
-    else{pending.push(obj);if(!state.live)log($('connLog'),'Servidor offline. Rode node server.js','err');}
+    else{pending.push(obj);}
   }
   function onMsg(msg){
-    if(msg.type==='engine_status'){state.live=msg.mode==='live';state.ssh=!!msg.ssh;setEngineUI();}
-    else if(msg.type==='ssh_status'){
-      if(msg.status==='connected'){state.ssh=true;setEngineUI();log($('connLog'),'Conectado','ok');}
-      else if(msg.status==='disconnected'){state.ssh=false;setEngineUI();log($('connLog'),'Desconectado');}
-      else if(msg.status==='error'){state.ssh=false;setEngineUI();log($('connLog'),msg.msg||'Falha SSH','err');$('connectBtn').disabled=false;$('connectBtn').textContent='Ativar conexao';}
-    }
-    else if(msg.type==='exec_done'){
-      if(msg.error)log($('connLog'),msg.error,'err');
-      else if(msg.root===true)log($('connLog'),'Root OK','ok');
-      else if(msg.root===false)log($('connLog'),'Sem root','err');
-    }
+    if(msg.type==='engine_status'){state.live=msg.mode==='live';setEngineUI();}
     else if(msg.type==='hs_list'){renderHS(msg.modes||{});}
     else if(msg.type==='hs_start'){clearLog($('hsLog'));log($('hsLog'),'Injetando '+msg.mode+'...');}
     else if(msg.type==='hs_done'){state.busy=false;setHsBtns(true);if(msg.ok)log($('hsLog'),'Sucesso — '+msg.mode+' ('+msg.files+' arquivo(s))','ok');else log($('hsLog'),msg.error||'Falha','err');}
@@ -1007,7 +939,7 @@ document.getElementById('loginEye').addEventListener('click',function(){
   function injectHS(mode){
     if(linkOnline && linkKey){
       if(state.busy)return;state.busy=true;setHsBtns(false);clearLog($('hsLog'));
-      log($('hsLog'),'Injetando via agent: '+mode+' ('+state.hsGame+')...');
+      log($('hsLog'),'Injetando: '+mode+' ('+state.hsGame+')...');
       fetch('/api/agent/hs-inject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:linkKey,mode:mode,game:state.hsGame||'normal'})})
         .then(function(r){return r.json();}).then(function(d){
           state.busy=false;setHsBtns(true);
@@ -1016,60 +948,15 @@ document.getElementById('loginEye').addEventListener('click',function(){
         }).catch(function(e){state.busy=false;setHsBtns(true);log($('hsLog'),'Erro: '+e.message,'err');});
       return;
     }
-    if(!state.live){log($('hsLog'),'Conecte o SSH ou o Link','err');return;}
-    if(!state.ssh){log($('hsLog'),'Conecte o SSH primeiro','err');go('conn');return;}
-    if(state.busy)return;
-    state.busy=true;setHsBtns(false);clearLog($('hsLog'));
-    send({type:'hs_inject_b64',data:{mode:mode,game:state.hsGame||'normal'}});
+    log($('hsLog'),'Conecte um dispositivo na aba Link','err');
+    go('link');
   }
   function needSsh(logEl){
     if(linkOnline && linkKey) return true;
-    if(!state.live){log(logEl,'Conecte o SSH ou o Link','err');return false;}
-    if(!state.ssh){log(logEl,'Conecte o SSH primeiro','err');go('conn');return false;}
-    return true;
+    log(logEl,'Conecte um dispositivo','err');
+    go('link');
+    return false;
   }
-  function setAuth(m){state.auth=m;$('authKeyBtn').classList.toggle('on',m==='key');$('authPassBtn').classList.toggle('on',m==='pass');$('keyField').style.display=m==='key'?'block':'none';$('passField').style.display=m==='pass'?'block':'none';if(m==='key')$('keyBox').style.display='block';}
-  $('authKeyBtn').addEventListener('click',function(){setAuth('key');});
-  $('authPassBtn').addEventListener('click',function(){setAuth('pass');});
-  function loadForm(){try{var c=JSON.parse(localStorage.getItem('kabe_ssh')||'{}');if(c.host)$('sshHost').value=c.host;if(c.port)$('sshPort').value=c.port;if(c.user)$('sshUser').value=c.user;if(c.auth)setAuth(c.auth);if(c.pass)$('sshPass').value=c.pass;if(c.key){$('keyBox').value=c.key;$('keyBox').style.display='block';}}catch(e){}}
-  function saveForm(){try{localStorage.setItem('kabe_ssh',JSON.stringify({host:$('sshHost').value.trim(),port:$('sshPort').value.trim(),user:$('sshUser').value.trim(),auth:state.auth,pass:$('sshPass').value,key:$('keyBox').value}));}catch(e){}}
-  $('loadKeyBtn').addEventListener('click',function(){
-    fetch('/api/key').then(function(r){if(!r.ok)throw new Error('Chave nao encontrada');return r.json();})
-      .then(function(j){$('keyBox').value=j.key||'';$('keyBox').style.display='block';log($('connLog'),'Chave carregada','ok');saveForm();})
-      .catch(function(e){log($('connLog'),e.message||'Falha','err');});
-  });
-  $('genSshBtn').addEventListener('click',function(){
-    log($('connLog'),'Gerando chaves SSH...');
-    fetch('/api/ssh/generate-keys',{method:'POST'})
-      .then(function(r){return r.json();})
-      .then(function(d){
-        if(d.error){log($('connLog'),d.error,'err');return;}
-        $('keyBox').value=d.privateKey;$('keyBox').style.display='block';
-        setAuth('key');saveForm();
-        log($('connLog'),'Chaves geradas! Privada salva. Copie a publica abaixo:','ok');
-        log($('connLog'),d.publicKey);
-        log($('connLog'),'Cole a publica no device: ~/.ssh/authorized_keys');
-      })
-      .catch(function(e){log($('connLog'),'Erro ao gerar chaves','err');});
-  });
-  function doConnect(data){
-    $('connectBtn').disabled=true;$('connectBtn').textContent='Conectando...';clearLog($('connLog'),'Conectando...');
-    send({type:'ssh_connect',data:data});
-    setTimeout(function(){if(!state.ssh){$('connectBtn').disabled=false;$('connectBtn').textContent='Ativar conexao';}},25000);
-  }
-  $('connectBtn').addEventListener('click',function(){
-    if(!state.live){log($('connLog'),'Rode node server.js','err');return;}
-    saveForm();
-    var data={host:$('sshHost').value.trim(),port:$('sshPort').value.trim()||'22',user:$('sshUser').value.trim()||'root',auth:state.auth,pass:$('sshPass').value,key:$('keyBox').value};
-    if(state.auth==='key'&&!data.key.trim()){
-      fetch('/api/key').then(function(r){return r.ok?r.json():Promise.reject();})
-        .then(function(j){data.key=j.key||'';$('keyBox').value=data.key;if(!data.key){log($('connLog'),'Cole a chave','err');return;}doConnect(data);})
-        .catch(function(){log($('connLog'),'Cole ou carregue a chave','err');});
-      return;
-    }
-    doConnect(data);
-  });
-  $('disconnectBtn').addEventListener('click',function(){send({type:'ssh_disconnect'});state.ssh=false;setEngineUI();log($('connLog'),'Desconectado');});
   var holoOn=false,glooOn=false;
   $('swHolo').addEventListener('click',function(){holoOn=!holoOn;$('swHolo').classList.toggle('on',holoOn);});
   $('swGloo').addEventListener('click',function(){glooOn=!glooOn;$('swGloo').classList.toggle('on',glooOn);});
@@ -1077,7 +964,7 @@ document.getElementById('loginEye').addEventListener('click',function(){
     var mode=1;if(glooOn)mode=2;
     if(linkOnline && linkKey){
       if(state.busy)return;state.busy=true;
-      clearLog($('holoLog'));log($('holoLog'),'Aplicando via agent...');
+      clearLog($('holoLog'));log($('holoLog'),'Aplicando...');
       fetch('/api/agent/holo-patch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:linkKey,game:state.holoGame,mode:mode})})
         .then(function(r){return r.json();}).then(function(d){
           state.busy=false;
@@ -1093,7 +980,7 @@ document.getElementById('loginEye').addEventListener('click',function(){
   $('holoRestore').addEventListener('click',function(){
     if(linkOnline && linkKey){
       if(state.busy)return;state.busy=true;
-      clearLog($('holoLog'));log($('holoLog'),'Restaurando via agent...');
+      clearLog($('holoLog'));log($('holoLog'),'Restaurando...');
       fetch('/api/agent/holo-restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:linkKey,game:state.holoGame})})
         .then(function(r){return r.json();}).then(function(d){
           state.busy=false;
@@ -1112,10 +999,20 @@ document.getElementById('loginEye').addEventListener('click',function(){
   setEngineUI();
   connectEngine();
 
-  // ── Link: conexao reversa ──
+  // ── Link: conexao ──
   var linkKey='',linkOnline=false;
 
   function linkGetKey(){return ($('linkKey').value||'').trim()||linkKey;}
+
+  function loadSavedKey(){
+    try{var k=localStorage.getItem('kabe_link_key');if(k){$('linkKey').value=k;linkKey=k;}}catch(e){}
+  }
+  function saveKey(k){try{localStorage.setItem('kabe_link_key',k);}catch(e){}}
+
+  $('linkKey').addEventListener('input',function(){
+    linkKey=$('linkKey').value.trim();
+    if(linkKey)saveKey(linkKey);
+  });
 
   function loadLinkDevices(){
     fetch('/api/agent/list').then(function(r){return r.json();}).then(function(list){
@@ -1171,8 +1068,7 @@ document.getElementById('loginEye').addEventListener('click',function(){
       }).catch(function(e){log($('cmdLog'),'Erro: '+e.message,'err');});
   }
 
-  $('linkKey').addEventListener('input',function(){linkKey=$('linkKey').value.trim();});
-
+  loadSavedKey();
   loadLinkDevices();
   setInterval(loadLinkDevices,10000);
 })();
