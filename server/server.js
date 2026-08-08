@@ -148,15 +148,15 @@ app.post('/api/admin/delete-user', (req, res) => {
 // ── API: Gerar chaves SSH ─────────────────────────────────
 app.post('/api/ssh/generate-keys', (req, res) => {
   try {
-    const { generateKeyPairSync, createPublicKey } = require('crypto');
-    const { privateKey, publicKey } = generateKeyPairSync('rsa', {
-      modulusLength: 2048,
-      publicKeyEncoding: { type: 'spki', format: 'pem' },
-      privateKeyEncoding: { type: 'pkcs1', format: 'pem' }
+    const { generateKeyPairSync } = require('ssh2').utils;
+    const type = String(req.body.type || 'rsa') === 'ed25519' ? 'ed25519' : 'rsa';
+    const opts = type === 'ed25519' ? {} : { bits: 2048 };
+    const k = generateKeyPairSync(type, opts);
+    res.json({
+      privateKey: k.private,
+      publicKey: k.public + (req.body.comment || ' kabe'),
+      type
     });
-    const der = createPublicKey(publicKey).export({ type: 'spki', format: 'der' });
-    const sshPub = 'ssh-rsa ' + der.toString('base64') + ' kabe';
-    res.json({ privateKey, publicKey: sshPub });
   } catch (e) {
     res.status(500).json({ error: 'Erro ao gerar chaves: ' + e.message });
   }
@@ -347,6 +347,11 @@ const HS_MODES = {
   hsneck: {
     label: 'HS Pescoco',
     desc: 'Capa no pescoco',
+    files: [HS_CACHE_FILE]
+  },
+  hspeito: {
+    label: 'HS Peito',
+    desc: 'Capa no peito',
     files: [HS_CACHE_FILE]
   }
 };

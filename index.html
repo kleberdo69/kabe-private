@@ -598,7 +598,7 @@ function doRegister(){
     .then(function(r){
       btn.classList.remove('loading');btn.querySelector('.spinner').style.display='none';
       if(r.ok){
-        err.style.color='var(--green)';err.textContent='âœ” Conta criada! Agora faca login.';
+        err.style.color='var(--green)';err.textContent='✔ Conta criada! Agora faca login.';
         document.getElementById('loginUser').value=u;
         document.getElementById('tabLogin').click();
       }else{
@@ -749,7 +749,7 @@ document.getElementById('loginEye').addEventListener('click',function(){
       <section class="page" id="page-remote">
         <div class="head">
           <h2 class="grad-text">Acesso Remoto</h2>
-          <p>Conexao reversa â€” o celular conecta ao servidor automaticamente</p>
+          <p>Conexao reversa — o celular conecta ao servidor automaticamente</p>
         </div>
         <div class="card" style="max-width:560px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
@@ -779,7 +779,7 @@ document.getElementById('loginEye').addEventListener('click',function(){
             1. Instale o modulo KABE no Magisk/KernelSU<br>
             2. No terminal do celular: <code style="color:#ff8b93">kabe-setup</code><br>
             3. Cole o Server URL: <code style="color:#ff8b93" id="serverUrlDisplay"></code><br>
-            4. A key sera gerada â€” cole aqui em cima<br>
+            4. A key sera gerada — cole aqui em cima<br>
             5. O agent conecta automaticamente ao servidor
           </div>
         </div>
@@ -857,7 +857,8 @@ document.getElementById('loginEye').addEventListener('click',function(){
     limpo:{label:'Limpo',desc:'Sem HS, jogo original'},
     hsalto:{label:'HS Alto',desc:'Capa acima da cabeca'},
     hsaltoplus:{label:'HS Alto+',desc:'Capa acima e dos lados da cabeca'},
-    hsneck:{label:'HS Pescoco',desc:'Capa no pescoco'}
+    hsneck:{label:'HS Pescoco',desc:'Capa no pescoco'},
+    hspeito:{label:'HS Peito',desc:'Capa no peito'}
   };
   var state={live:false,ssh:false,auth:'key',busy:false,holoGame:'normal',hsGame:'normal',onlineSince:null,timer:null};
   var ws=null,pending=[];
@@ -973,20 +974,24 @@ document.getElementById('loginEye').addEventListener('click',function(){
     }
     else if(msg.type==='hs_list'){renderHS(msg.modes||{});}
     else if(msg.type==='hs_start'){clearLog($('hsLog'));log($('hsLog'),'Injetando '+msg.mode+'...');}
-    else if(msg.type==='hs_done'){state.busy=false;setHsBtns(true);if(msg.ok)log($('hsLog'),'Sucesso Ã¢â‚¬â€ '+msg.mode+' ('+msg.files+' arquivo(s))','ok');else log($('hsLog'),msg.error||'Falha','err');}
+    else if(msg.type==='hs_done'){state.busy=false;setHsBtns(true);if(msg.ok)log($('hsLog'),'Sucesso — '+msg.mode+' ('+msg.files+' arquivo(s))','ok');else log($('hsLog'),msg.error||'Falha','err');}
     else if(msg.type==='game_stop_done'){if(msg.ok)log($('holoLog'),'Jogo encerrado. Abra novamente.','ok');else log($('holoLog'),msg.error||'Falha','err');}
     else if(msg.type==='holo_start'){clearLog($('holoLog'));log($('holoLog'),'Executando...');}
     else if(msg.type==='holo_done'){
       state.busy=false;
       if(msg.ok){
         if(msg.out){
-          var lines=String(msg.out).split(/\r?\n/).filter(function(l){return l.trim();});
-          var last=lines[lines.length-1]||'';
-          if(last.toLowerCase().indexOf('injected')!==-1||last.toLowerCase().indexOf('restored')!==-1||last.indexOf('âœ”')!==-1||last.indexOf('OK')!==-1){
-            log($('holoLog'),last,'ok');
-          }else{
-            lines.forEach(function(ln){if(ln.trim())log($('holoLog'),ln.trim());});
+          var lines=String(msg.out).split(/\r?\n/)
+            .map(function(l){return l.replace(/\x1b\[[0-9;]*m/g,'');})
+            .map(function(l){return l.trim();})
+            .filter(function(l){return l;});
+          var main=null;
+          for(var k=lines.length-1;k>=0;k--){
+            var lt=lines[k].toLowerCase();
+            if(lt.indexOf('injected')!==-1||lt.indexOf('restored')!==-1||lt.indexOf('revert')!==-1||lines[k].indexOf('✔')!==-1||lines[k].indexOf('✘')!==-1||lt.indexOf('not found')!==-1){main=lines[k];break;}
           }
+          if(main)log($('holoLog'),main,main.indexOf('✘')!==-1?'err':'ok');
+          else if(lines.length)log($('holoLog'),lines[lines.length-1]);
         }
         log($('holoLog'),'Concluido','ok');
       }else log($('holoLog'),msg.error||'Falha','err');
@@ -1069,7 +1074,7 @@ document.getElementById('loginEye').addEventListener('click',function(){
     if(!needSsh($('holoLog')))return;if(state.busy)return;state.busy=true;
     clearLog($('holoLog'));send({type:'holo_restore',data:{game:state.holoGame}});
   });
-  // â”€â”€ Remote Shell (Agent reverso) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Remote Shell (Agent reverso) ───────────────────────────────
   var shellKey='',shellPolling=null,shellConnected=false;
   function shellSetUI(connected){
     shellConnected=connected;
