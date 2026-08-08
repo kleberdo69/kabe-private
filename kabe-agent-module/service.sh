@@ -93,7 +93,7 @@ DEVICE_ID=$(getprop ro.product.model 2>/dev/null)
 # Phone IP
 PHONE_IP=""
 for iface in wlan0 eth0 wlan1; do
-    PHONE_IP=$(ifconfig "$iface" 2>/dev/null | grep 'inet addr' | awk '{print $2}' | cut -d: -f2)
+    PHONE_IP=$(ip addr show "$iface" 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
     [ -n "$PHONE_IP" ] && break
 done
 [ -z "$PHONE_IP" ] && PHONE_IP="unknown"
