@@ -232,9 +232,47 @@ app.post('/api/agent/config', (req, res) => {
 let ssh = null;               // conexão ssh2 atual
 let rootMethod = null;        // null | 'direct' | 'su'
 let cmdQueue = Promise.resolve(); // serializa comandos (evita sobreposição)
+let agentKey = null;          // key do agente conectado (modo reverso)
+let useAgent = false;         // true quando rota via agente
+
+// ── Agent exec: envia cmd ao agente e espera saida ──────
+function agentExec(cmd, ws) {
+  return new Promise((resolve, reject) => {
+    if (!agentKey) return reject(new Error('Agent nao conectado'));
+    const agent = agents.get(agentKey);
+    if (!agent) return reject(new Error('Agent offline'));
+    const id = Date.now();
+    agent.pending.push({ id, cmd });
+    safeSend(ws, { type: 'exec_output', line: '> ' + cmd + '\n' });
+    let attempts = 0;
+    const timer = setInterval(() => {
+      attempts++;
+      if (attempts > 150) { clearInterval(timer); reject(new Error('Timeout agent (30s)')); return; }
+      const match = agent.output.find(o => o.id === id);
+      if (match) {
+        clearInterval(timer);
+        agent.output = agent.output.filter(o => o.id !== id);
+        safeSend(ws, { type: 'exec_output', line: match.output });
+        resolve({ code: match.exit, out: match.output });
+      }
+    }, 200);
+  });
+}
+
+// Detectar key do agente conectado
+function findAgentKey() {
+  for (const [k, v] of agents) {
+    if ((Date.now() - v.lastSeen) < 30000) return k;
+  }
+  return null;
+}
 
 function safeSend(ws, obj) {
   try { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); } catch (e) {}
+}
+function log(ws, msg, type) {
+  safeSend(ws, { type: 'exec_output', line: msg + '\n' });
+  console.log('[KABE] ' + msg);
 }
 
 // ── Conectar SSH ─────────────────────────────────────────
@@ -300,6 +338,9 @@ function execSSH(cmd, ws) {
 
 // Executa como root quando possível (usa su se necessário)
 function execRoot(cmd, ws) {
+  if (useAgent) {
+    return agentExec('su -c ' + JSON.stringify(cmd), ws);
+  }
   if (rootMethod === 'su') {
     return execSSH('su -c ' + JSON.stringify(cmd), ws);
   }
@@ -676,9 +717,13 @@ wss.on('connection', (ws) => {
     try { msg = JSON.parse(raw); } catch (e) { return; }
 
     if (msg.type === 'ssh_connect') {
+      // 1) Tentar SSH direto
+      let connected = false;
       try {
         await connectSSH(msg.data);
-        safeSend(ws, { type: 'ssh_status', status: 'connected' });
+        connected = true;
+        useAgent = false;
+        safeSend(ws, { type: 'ssh_status', status: 'connected', mode: 'direct' });
         safeSend(ws, { type: 'engine_status', mode: 'live', ssh: true });
         cmdQueue = cmdQueue.then(async () => {
           try {
@@ -689,13 +734,27 @@ wss.on('connection', (ws) => {
           }
         });
       } catch (e) {
-        safeSend(ws, { type: 'ssh_status', status: 'error', msg: String(e.message || e) });
-        safeSend(ws, { type: 'engine_status', mode: 'live', ssh: false });
+        // 2) SSH direto falhou — tentar via agente reverso
+        agentKey = findAgentKey();
+        if (agentKey) {
+          useAgent = true;
+          rootMethod = 'su';
+          safeSend(ws, { type: 'ssh_status', status: 'connected', mode: 'agent' });
+          safeSend(ws, { type: 'engine_status', mode: 'live', ssh: true });
+          safeSend(ws, { type: 'exec_done', root: true, code: 0 });
+          log(ws, 'Conectado via AGENTE (reverso)');
+        } else {
+          useAgent = false;
+          safeSend(ws, { type: 'ssh_status', status: 'error', msg: 'SSH direto falhou: ' + (e.message || e) + ' | Agente nao encontrado. Instale o modulo no celular.' });
+          safeSend(ws, { type: 'engine_status', mode: 'live', ssh: false });
+        }
       }
     }
 
     else if (msg.type === 'ssh_disconnect') {
       if (ssh) { try { ssh.end(); } catch (e) {} ssh = null; }
+      useAgent = false;
+      agentKey = null;
       rootMethod = null;
       safeSend(ws, { type: 'ssh_status', status: 'disconnected' });
       safeSend(ws, { type: 'engine_status', mode: 'live', ssh: false });

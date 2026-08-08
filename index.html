@@ -923,7 +923,12 @@ document.getElementById('loginEye').addEventListener('click',function(){
   function onMsg(msg){
     if(msg.type==='engine_status'){state.live=msg.mode==='live';state.ssh=!!msg.ssh;setEngineUI();}
     else if(msg.type==='ssh_status'){
-      if(msg.status==='connected'){state.ssh=true;setEngineUI();log($('connLog'),'Conectado','ok');}
+      if(msg.status==='connected'){
+        state.ssh=true;setEngineUI();
+        var modeLabel=msg.mode==='agent'?'Conectado via AGENTE (reverso)':'Conectado SSH direto';
+        log($('connLog'),modeLabel,'ok');
+        if(msg.mode==='agent')$('connBadgeText').textContent='Agent';
+      }
       else if(msg.status==='disconnected'){state.ssh=false;setEngineUI();log($('connLog'),'Desconectado');}
       else if(msg.status==='error'){state.ssh=false;setEngineUI();log($('connLog'),msg.msg||'Falha SSH','err');$('connectBtn').disabled=false;$('connectBtn').textContent='Ativar conexao';}
     }
