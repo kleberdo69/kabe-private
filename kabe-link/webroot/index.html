@@ -18,18 +18,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(220,38,38,.4),transparent)}
 @keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 
-.brand{text-align:center;margin-bottom:20px;position:relative}
-.brand h1{font-size:26px;font-weight:900;letter-spacing:4px;background:linear-gradient(135deg,#f87171,#dc2626,#991b1b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:glow 3s ease-in-out infinite alternate;position:relative}
-@keyframes glow{0%{filter:brightness(1);text-shadow:0 0 0 transparent}50%{filter:brightness(1.2);text-shadow:0 0 30px rgba(220,38,38,.2)}100%{filter:brightness(1);text-shadow:0 0 0 transparent}}
-.brand .tag{font-size:9px;color:#444;letter-spacing:4px;text-transform:uppercase;margin-top:4px;animation:fadeIn .6s ease .2s backwards}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.brand{text-align:center;margin-bottom:20px}
+.brand h1{font-size:26px;font-weight:900;letter-spacing:4px;background:linear-gradient(135deg,#f87171,#dc2626,#991b1b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:glow 3s ease-in-out infinite alternate}
+@keyframes glow{0%{filter:brightness(1)}50%{filter:brightness(1.2)}100%{filter:brightness(1)}}
+.brand .tag{font-size:9px;color:#444;letter-spacing:4px;text-transform:uppercase;margin-top:4px}
 
 .key-box{background:#0a0a10;border:1.5px solid #dc2626;border-radius:10px;padding:20px 14px;text-align:center;margin:14px 0;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
 .key-box::after{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:conic-gradient(from 0deg,transparent,rgba(220,38,38,.05),transparent,rgba(220,38,38,.05),transparent);animation:rotate 8s linear infinite;pointer-events:none}
 @keyframes rotate{to{transform:rotate(360deg)}}
-.key-box:active{transform:scale(.97);border-color:#f87171;box-shadow:0 0 30px rgba(220,38,38,.2)}
+.key-box:active{transform:scale(.97);border-color:#f87171}
 .key-box .lbl{font-size:9px;text-transform:uppercase;letter-spacing:3px;color:#555;margin-bottom:10px;position:relative;z-index:1}
-.key-box .key{font-size:15px;font-weight:800;color:#ef4444;font-family:'SF Mono',Menlo,monospace;word-break:break-all;user-select:all;line-height:1.6;position:relative;z-index:1}
+.key-box .key{font-size:15px;font-weight:800;color:#ef4444;font-family:monospace;word-break:break-all;user-select:all;line-height:1.6;position:relative;z-index:1}
 .key-box .hint{font-size:10px;color:#333;margin-top:10px;position:relative;z-index:1}
 
 .status-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #14141e}
@@ -37,33 +36,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;transition:all .4s}
 .dot.on{background:#22c55e;box-shadow:0 0 10px rgba(34,197,94,.5);animation:dotPulse 2s infinite}
 .dot.off{background:#333;box-shadow:none}
-.dot.wait{background:#f59e0b;box-shadow:0 0 10px rgba(245,158,11,.4);animation:dotPulse 1.5s infinite}
 @keyframes dotPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
 .lbl2{font-size:11px;color:#555;flex:1;text-transform:uppercase;letter-spacing:1.5px}
-.val{font-size:11px;color:#aaa;font-weight:600;font-family:'SF Mono',Menlo,monospace;transition:color .3s}
+.val{font-size:11px;color:#aaa;font-weight:600;font-family:monospace;transition:color .3s}
 
-.divider{height:1px;background:linear-gradient(90deg,transparent,#1c1c2a,transparent);margin:4px 0}
-
-.link-box{background:#0a0a10;border:1px solid #1a1a26;border-radius:8px;padding:14px;margin-top:14px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
-.link-box::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(220,38,38,.03),transparent);pointer-events:none}
+.link-box{background:#0a0a10;border:1px solid #1a1a26;border-radius:8px;padding:14px;margin-top:14px;cursor:pointer;transition:all .2s}
 .link-box:active{border-color:#dc2626;transform:scale(.98)}
 .link-box .lbl{font-size:9px;text-transform:uppercase;letter-spacing:3px;color:#444;margin-bottom:6px}
-.link-box .url{font-size:11px;color:#ef4444;font-family:'SF Mono',Menlo,monospace;word-break:break-all}
+.link-box .url{font-size:11px;color:#ef4444;font-family:monospace;word-break:break-all}
 .link-box .hint{font-size:10px;color:#2a2a2a;margin-top:6px}
 
 .steps{padding:14px;background:#0a0a10;border-radius:8px;border:1px solid #13131d;position:relative;overflow:hidden}
 .steps::before{content:'';position:absolute;top:0;left:0;width:2px;height:100%;background:linear-gradient(to bottom,#dc2626,transparent);border-radius:1px}
 .steps .title{font-size:9px;text-transform:uppercase;letter-spacing:3px;color:#444;margin-bottom:12px;padding-left:10px}
-.steps .step{display:flex;gap:10px;padding:6px 0 6px 10px;font-size:11px;color:#555;transition:color .2s}
-.steps .step:hover{color:#888}
+.steps .step{display:flex;gap:10px;padding:6px 0 6px 10px;font-size:11px;color:#555}
 .steps .step .n{color:#dc2626;font-weight:800;flex-shrink:0;width:16px;font-size:12px}
 .steps .step .t{color:#555}
 
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;padding:12px 28px;border-radius:10px;font-size:12px;font-weight:600;z-index:999;display:none;box-shadow:0 8px 30px rgba(220,38,38,.3);animation:toastIn .3s ease forwards}
-@keyframes toastIn{to{transform:translateX(-50%) translateY(0)}}
-
-.skeleton{background:linear-gradient(90deg,#14141e 25%,#1a1a28 50%,#14141e 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px;height:14px;display:inline-block}
-@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;padding:12px 28px;border-radius:10px;font-size:12px;font-weight:600;z-index:999;display:none;box-shadow:0 8px 30px rgba(220,38,38,.3)}
 </style>
 </head>
 <body>
@@ -79,28 +69,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
   <div class="key-box" onclick="copyKey()">
     <div class="lbl">Sua Key</div>
-    <div class="key" id="keyText"><span class="skeleton" style="width:120px">&nbsp;</span></div>
+    <div class="key" id="keyText">Carregando...</div>
     <div class="hint">Toque para copiar</div>
   </div>
 
   <div class="status-row">
-    <div class="dot wait" id="dotAgent"></div>
+    <div class="dot" id="dotAgent"></div>
     <span class="lbl2">Agent</span>
-    <span class="val" id="valAgent"><span class="skeleton" style="width:60px">&nbsp;</span></span>
+    <span class="val" id="valAgent">...</span>
   </div>
   <div class="status-row">
     <div class="dot" id="dotServer"></div>
     <span class="lbl2">Servidor</span>
-    <span class="val" id="valServer"><span class="skeleton" style="width:50px">&nbsp;</span></span>
+    <span class="val" id="valServer">...</span>
   </div>
-  <div class="divider"></div>
   <div class="status-row">
     <span class="lbl2">IP</span>
-    <span class="val" id="valIp"><span class="skeleton" style="width:90px">&nbsp;</span></span>
+    <span class="val" id="valIp">...</span>
   </div>
   <div class="status-row">
     <span class="lbl2">Device</span>
-    <span class="val" id="valDevice"><span class="skeleton" style="width:100px">&nbsp;</span></span>
+    <span class="val" id="valDevice">...</span>
   </div>
   <div class="status-row">
     <span class="lbl2">Porta</span>
@@ -109,7 +98,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
   <div class="link-box" onclick="copyLink()">
     <div class="lbl">Acesso Remoto</div>
-    <div class="url" id="publicUrl"><span class="skeleton" style="width:150px">&nbsp;</span></div>
+    <div class="url" id="publicUrl">Carregando...</div>
     <div class="hint">Toque para copiar</div>
   </div>
 </div>
@@ -131,54 +120,94 @@ var prevOnline=null;
 function $(id){return document.getElementById(id)}
 function toast(m){var t=$('toast');t.textContent=m;t.style.display='block';setTimeout(function(){t.style.display='none'},2200)}
 
+function exec(cmd,cb){
+  if(window.ksu&&typeof window.ksu.exec==='function'){
+    try{window.ksu.exec(cmd,function(r){cb(r||'')});}catch(e){cb('');}
+    return;
+  }
+  if(window.ksu&&typeof window.ksu.spawn==='function'){
+    try{var p=window.ksu.spawn(cmd);var o='';if(p.stdout)p.stdout.on('data',function(d){o+=d});if(p.onExit)p.onExit(function(){cb(o)});}catch(e){cb('');}
+    return;
+  }
+  cb('');
+}
+
 function copyKey(){
   var k=$('keyText').textContent;
-  if(!k||k.indexOf('...')>-1)return;
+  if(!k||k==='Carregando...')return;
   if(navigator.clipboard){navigator.clipboard.writeText(k).then(function(){toast('Key copiada!');});}
   else{var t=document.createElement('textarea');t.value=k;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);toast('Key copiada!');}
 }
 
 function copyLink(){
   var u=$('publicUrl').textContent;
-  if(!u||u.indexOf('...')>-1)return;
+  if(!u||u==='Carregando...')return;
   if(navigator.clipboard){navigator.clipboard.writeText(u).then(function(){toast('Link copiado!');});}
   else{var t=document.createElement('textarea');t.value=u;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);toast('Link copiado!');}
 }
 
-function updateUI(d){
-  $('keyText').textContent=d.key||'...';
+function loadData(){
+  // Ler key
+  exec('cat /data/adb/kabe/key 2>/dev/null',function(r){
+    r=(r||'').trim();
+    if(r&&r.indexOf('KABE-')===0){
+      $('keyText').textContent=r;
+    }else{
+      $('keyText').textContent='Key nao encontrada';
+    }
+  });
 
-  var dotA=$('dotAgent'),valA=$('valAgent');
-  if(d.agentOnline){
-    dotA.className='dot on';valA.textContent='ONLINE';valA.style.color='#22c55e';
-    if(prevOnline===false){toast('Dispositivo conectado!');}
-  }else{
-    dotA.className='dot off';valA.textContent='OFFLINE';valA.style.color='#666';
-  }
-  prevOnline=!!d.agentOnline;
+  // Ler config + IP + device
+  exec('cat /data/adb/kabe/config 2>/dev/null',function(cfg){
+    var server='';
+    (cfg||'').trim().split('\n').forEach(function(l){
+      var p=l.indexOf('=');
+      if(p>0&&l.substring(0,p)==='server')server=l.substring(p+1);
+    });
+    $('valServer').textContent=server||'...';
+  });
 
-  var dotS=$('dotServer'),valS=$('valServer');
-  if(d.serverReachable){dotS.className='dot on';valS.textContent='OK';valS.style.color='#22c55e';}
-  else{dotS.className='dot off';valS.textContent='ERRO';valS.style.color='#ef4444';}
+  exec('getprop ro.product.model 2>/dev/null',function(r){
+    $('valDevice').textContent=(r||'').trim()||'...';
+  });
 
-  $('valIp').textContent=d.ip||'...';
-  $('valDevice').textContent=d.device||'...';
-  $('valPort').textContent=d.webPort||'9090';
+  exec('ip addr show wlan0 2>/dev/null | grep "inet " | head -1 | awk "{print \\$2}" | cut -d/ -f1',function(r){
+    var ip=(r||'').trim();
+    if(ip){
+      $('valIp').textContent=ip;
+      $('publicUrl').textContent='http://'+ip+':9090';
+    }
+  });
 
-  var ip=d.ip||'';
-  if(ip&&ip!=='unknown'){$('publicUrl').textContent='http://'+ip+':'+(d.webPort||9090);}
-  else{$('publicUrl').textContent='Aguardando IP...';}
+  // Verificar se o agent ta rodando
+  exec('cat /data/adb/kabe/link.pid 2>/dev/null',function(r){
+    var pid=(r||'').trim();
+    if(pid){
+      exec('kill -0 '+pid+' 2>/dev/null && echo alive || echo dead',function(s){
+        s=(s||'').trim();
+        var dotA=$('dotAgent'),valA=$('valAgent');
+        if(s==='alive'){dotA.className='dot on';valA.textContent='ONLINE';valA.style.color='#22c55e';}
+        else{dotA.className='dot off';valA.textContent='OFFLINE';valA.style.color='#666';}
+      });
+    }else{
+      $('dotAgent').className='dot off';
+      $('valAgent').textContent='PARADO';
+    }
+  });
+
+  // Verificar servidor
+  exec('curl -s --connect-timeout 3 --max-time 5 https://kabe-private-production.up.railway.app/api/agent/list 2>/dev/null | grep -c key',function(r){
+    var dotS=$('dotServer'),valS=$('valServer');
+    if((r||'').trim()==='0'||!(r||'').trim()){
+      dotS.className='dot off';valS.textContent='ERRO';valS.style.color='#ef4444';
+    }else{
+      dotS.className='dot on';valS.textContent='OK';valS.style.color='#22c55e';
+    }
+  });
 }
 
-function fetchStatus(){
-  fetch('/status.json?t='+Date.now())
-    .then(function(r){return r.json();})
-    .then(function(d){updateUI(d);})
-    .catch(function(){});
-}
-
-fetchStatus();
-setInterval(fetchStatus,3000);
+loadData();
+setInterval(loadData,5000);
 </script>
 </body>
 </html>
