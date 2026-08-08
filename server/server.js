@@ -45,6 +45,7 @@ function genKey() {
 
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws' });
 
