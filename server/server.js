@@ -45,7 +45,6 @@ function genKey() {
 
 const app = express();
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws' });
 
@@ -233,80 +232,9 @@ app.post('/api/agent/config', (req, res) => {
 let ssh = null;               // conexão ssh2 atual
 let rootMethod = null;        // null | 'direct' | 'su'
 let cmdQueue = Promise.resolve(); // serializa comandos (evita sobreposição)
-let agentKey = null;          // key do agente conectado (modo reverso)
-let agentServer = null;       // URL do servidor remoto do agent
-let useAgent = false;         // true quando rota via agente
-
-// ── Agent exec: envia cmd e espera saida ──────
-function agentExec(cmd, ws) {
-  const https = require('https');
-  const FB = 'https://khkh-38cba-default-rtdb.firebaseio.com';
-  return new Promise((resolve, reject) => {
-    const key = agentKey;
-    if (!key) return reject(new Error('Agent nao conectado'));
-
-    const cmdId = 'cmd_' + Date.now();
-    const cmdData = JSON.stringify({ cmd: cmd, status: 'pending' });
-
-    // Write command to Firebase
-    const urlObj = new URL(FB + '/kabe/' + key + '/commands/' + cmdId + '.json');
-    const options = {
-      hostname: urlObj.hostname,
-      path: urlObj.pathname,
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(cmdData) },
-      timeout: 10000
-    };
-
-    const req = https.request(options, (res) => {
-      let data = '';
-      res.on('data', (chunk) => data += chunk);
-      res.on('end', () => {
-        // Poll Firebase for output
-        let attempts = 0;
-        const poll = setInterval(() => {
-          attempts++;
-          if (attempts > 30) { clearInterval(poll); reject(new Error('Timeout output')); return; }
-
-          https.get(FB + '/kabe/' + key + '/commands/' + cmdId + '.json', (pRes) => {
-            let pData = '';
-            pRes.on('data', (c) => pData += c);
-            pRes.on('end', () => {
-              try {
-                const result = JSON.parse(pData);
-                if (result && result.status === 'done') {
-                  clearInterval(poll);
-                  let output = '';
-                  try { output = Buffer.from(result.output || '', 'base64').toString('utf8'); } catch(e) { output = result.output || ''; }
-                  safeSend(ws, { type: 'exec_output', line: output });
-                  resolve({ code: result.exit, out: output });
-                }
-              } catch(e) {}
-            });
-          }).on('error', () => {});
-        }, 1000);
-      });
-    });
-    req.on('error', (e) => reject(new Error('Erro conexao: ' + e.message)));
-    req.write(cmdData);
-    req.end();
-  });
-}
-
-// Detectar key do agente conectado
-function findAgentKey() {
-  for (const [k, v] of agents) {
-    if ((Date.now() - v.lastSeen) < 30000) return k;
-  }
-  return null;
-}
 
 function safeSend(ws, obj) {
   try { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); } catch (e) {}
-}
-function log(ws, msg, type) {
-  safeSend(ws, { type: 'exec_output', line: msg + '\n' });
-  console.log('[KABE] ' + msg);
 }
 
 // ── Conectar SSH ─────────────────────────────────────────
@@ -372,10 +300,6 @@ function execSSH(cmd, ws) {
 
 // Executa como root quando possível (usa su se necessário)
 function execRoot(cmd, ws) {
-  if (useAgent) {
-    // Agent ja executa com su -c, enviar comando cru
-    return agentExec(cmd, ws);
-  }
   if (rootMethod === 'su') {
     return execSSH('su -c ' + JSON.stringify(cmd), ws);
   }
@@ -469,7 +393,7 @@ async function injectHSB64(modeId, game, ws) {
   for (const c of cmds) {
     const data = fs.readFileSync(c.local);
     const b64 = data.toString('base64');
-    const chunkSize = 4000;
+    const chunkSize = 20000;
     const tmpB64 = '/data/local/tmp/.kabe_hs.b64';
     const tmpBin = '/data/local/tmp/.kabe_hs.bin';
 
@@ -478,13 +402,13 @@ async function injectHSB64(modeId, game, ws) {
 
     for (let i = 0; i < b64.length; i += chunkSize) {
       const chunk = b64.slice(i, i + chunkSize);
-      await execRoot("echo -n \"" + chunk.replace(/"/g, '\\"') + "\" >> \"" + tmpB64 + "\"", ws);
+      await execRoot("su -c 'echo -n \"" + chunk.replace(/"/g, '\\"') + "\" >> \"" + tmpB64 + "\"'", ws);
     }
 
     await execRoot(
-      "base64 -d \"" + tmpB64 + "\" > \"" + tmpBin + "\" && " +
+      "su -c 'base64 -d \"" + tmpB64 + "\" > \"" + tmpBin + "\" && " +
       "cp -f \"" + tmpBin + "\" \"" + c.remote + "\" && " +
-      "rm -f \"" + tmpB64 + "\" \"" + tmpBin + "\"",
+      "rm -f \"" + tmpB64 + "\" \"" + tmpBin + "\"'",
       ws
     );
     await execRoot(
@@ -752,13 +676,9 @@ wss.on('connection', (ws) => {
     try { msg = JSON.parse(raw); } catch (e) { return; }
 
     if (msg.type === 'ssh_connect') {
-      // 1) Tentar SSH direto
-      let connected = false;
       try {
         await connectSSH(msg.data);
-        connected = true;
-        useAgent = false;
-        safeSend(ws, { type: 'ssh_status', status: 'connected', mode: 'direct' });
+        safeSend(ws, { type: 'ssh_status', status: 'connected' });
         safeSend(ws, { type: 'engine_status', mode: 'live', ssh: true });
         cmdQueue = cmdQueue.then(async () => {
           try {
@@ -769,48 +689,16 @@ wss.on('connection', (ws) => {
           }
         });
       } catch (e) {
-        // 2) SSH direto falhou — tentar via agente reverso
-        agentKey = findAgentKey();
-        if (agentKey) {
-          useAgent = true;
-          rootMethod = 'su';
-          safeSend(ws, { type: 'ssh_status', status: 'connected', mode: 'agent' });
-          safeSend(ws, { type: 'engine_status', mode: 'live', ssh: true });
-          safeSend(ws, { type: 'exec_done', root: true, code: 0 });
-          log(ws, 'Conectado via AGENTE (reverso)');
-        } else {
-          useAgent = false;
-          safeSend(ws, { type: 'ssh_status', status: 'error', msg: 'SSH direto falhou: ' + (e.message || e) + ' | Agente nao encontrado. Instale o modulo no celular.' });
-          safeSend(ws, { type: 'engine_status', mode: 'live', ssh: false });
-        }
+        safeSend(ws, { type: 'ssh_status', status: 'error', msg: String(e.message || e) });
+        safeSend(ws, { type: 'engine_status', mode: 'live', ssh: false });
       }
     }
 
     else if (msg.type === 'ssh_disconnect') {
       if (ssh) { try { ssh.end(); } catch (e) {} ssh = null; }
-      useAgent = false;
-      agentKey = null;
-      agentServer = null;
       rootMethod = null;
       safeSend(ws, { type: 'ssh_status', status: 'disconnected' });
       safeSend(ws, { type: 'engine_status', mode: 'live', ssh: false });
-    }
-
-    else if (msg.type === 'agent_connect') {
-      const key = msg.data && msg.data.key;
-      const remoteServer = msg.data && msg.data.server;
-      if (!key) { safeSend(ws, { type: 'ssh_status', status: 'error', msg: 'Key obrigatoria' }); return; }
-      
-      // Store remote server URL for agent commands
-      agentKey = key;
-      agentServer = remoteServer || 'https://kabe-private-production.up.railway.app';
-      useAgent = true;
-      rootMethod = 'su';
-      
-      safeSend(ws, { type: 'ssh_status', status: 'connected', mode: 'agent' });
-      safeSend(ws, { type: 'engine_status', mode: 'live', ssh: true });
-      safeSend(ws, { type: 'exec_done', root: true, code: 0 });
-      log(ws, 'Conectado via AGENTE: ' + key + ' @ ' + agentServer);
     }
 
     else if (msg.type === 'exec' && msg.data && msg.data.cmd) {

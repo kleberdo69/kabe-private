@@ -687,36 +687,12 @@ document.getElementById('loginEye').addEventListener('click',function(){
 
       <section class="page" id="page-conn">
         <div class="head">
-          <h2 class="grad-text">Conexao</h2>
-          <p>Conecte ao celular via SSH direto ou pelo Agent reverso</p>
+          <h2 class="grad-text">Conexao SSH</h2>
+          <p>Configure o acesso SSH e aprove com o modulo KaE Private no celular</p>
         </div>
-
-        <!-- Agent Reverso -->
-        <div class="card" style="max-width:560px;margin-bottom:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-            <h3>Agent KABE (Reverso)</h3>
-            <div class="badge" id="agentBadge"><i></i><span id="agentBadgeText">Desconectado</span></div>
-          </div>
-          <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Funciona de qualquer lugar — o celular conecta no servidor automaticamente</p>
-          <div class="field">
-            <label>Key do Agent</label>
-            <input id="agentKey" type="text" placeholder="KABE-XXXXXXXX" style="font-family:monospace;font-size:16px;letter-spacing:1px;text-transform:uppercase">
-          </div>
-          <div class="field">
-            <label>Servidor do Agent (onde o modulo conecta)</label>
-            <input id="agentServer" type="text" value="https://kabe-private-production.up.railway.app" style="font-family:monospace;font-size:12px">
-          </div>
-          <div class="actions">
-            <button class="btn btn-main" id="agentConnectBtn" type="button" style="width:auto;min-width:150px">Conectar Agent</button>
-            <button class="btn btn-sm" id="agentDisconnectBtn" type="button" style="display:none">Desconectar</button>
-          </div>
-          <div class="log" id="agentLog" style="margin-top:16px"><div>Pronto</div></div>
-        </div>
-
-        <!-- SSH Direto -->
         <div class="card" style="max-width:560px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-            <h3>SSH Direto (Port 22)</h3>
+            <h3>Acesso SSH PORT 22</h3>
             <div class="badge" id="connBadge"><i></i><span id="connBadgeText">Desconectado</span></div>
           </div>
           <div class="row2">
@@ -947,24 +923,9 @@ document.getElementById('loginEye').addEventListener('click',function(){
   function onMsg(msg){
     if(msg.type==='engine_status'){state.live=msg.mode==='live';state.ssh=!!msg.ssh;setEngineUI();}
     else if(msg.type==='ssh_status'){
-      if(msg.status==='connected'){
-        state.ssh=true;setEngineUI();
-        if(msg.mode==='agent'){
-          setAgentUI(true);
-          log($('agentLog'),'Conectado via AGENTE','ok');
-          $('agentConnectBtn').disabled=false;$('agentConnectBtn').textContent='Conectar Agent';
-        }else{
-          log($('connLog'),'Conectado SSH direto','ok');
-        }
-      }
-      else if(msg.status==='disconnected'){state.ssh=false;setEngineUI();setAgentUI(false);log($('agentLog'),'Desconectado');log($('connLog'),'Desconectado');}
-      else if(msg.status==='error'){
-        state.ssh=false;setEngineUI();
-        log($('agentLog'),msg.msg||'Falha','err');
-        log($('connLog'),msg.msg||'Falha SSH','err');
-        $('agentConnectBtn').disabled=false;$('agentConnectBtn').textContent='Conectar Agent';
-        $('connectBtn').disabled=false;$('connectBtn').textContent='Ativar conexao';
-      }
+      if(msg.status==='connected'){state.ssh=true;setEngineUI();log($('connLog'),'Conectado','ok');}
+      else if(msg.status==='disconnected'){state.ssh=false;setEngineUI();log($('connLog'),'Desconectado');}
+      else if(msg.status==='error'){state.ssh=false;setEngineUI();log($('connLog'),msg.msg||'Falha SSH','err');$('connectBtn').disabled=false;$('connectBtn').textContent='Ativar conexao';}
     }
     else if(msg.type==='exec_done'){
       if(msg.error)log($('connLog'),msg.error,'err');
@@ -1061,52 +1022,6 @@ document.getElementById('loginEye').addEventListener('click',function(){
     doConnect(data);
   });
   $('disconnectBtn').addEventListener('click',function(){send({type:'ssh_disconnect'});state.ssh=false;setEngineUI();log($('connLog'),'Desconectado');});
-
-  // ── Agent Reverso ──────────────────────────────────────
-  function loadAgentKey(){try{var k=localStorage.getItem('kabe_agent_key');if(k)$('agentKey').value=k;}catch(e){}}
-  function saveAgentKey(){try{localStorage.setItem('kabe_agent_key',$('agentKey').value.trim());}catch(e){}}
-
-  function setAgentUI(connected){
-    $('agentBadge').className='badge '+(connected?'on':'');
-    $('agentBadgeText').textContent=connected?'Agent conectado':'Desconectado';
-    $('agentConnectBtn').style.display=connected?'none':'inline-flex';
-    $('agentDisconnectBtn').style.display=connected?'inline-flex':'none';
-    state.ssh=connected;
-    setEngineUI();
-  }
-
-  $('agentConnectBtn').addEventListener('click',function(){
-    var key=$('agentKey').value.trim().toUpperCase();
-    if(!key){log($('agentLog'),'Cole a key do agent','err');return;}
-    saveAgentKey();
-    log($('agentLog'),'Verificando agent no Firebase...');
-    $('agentConnectBtn').disabled=true;$('agentConnectBtn').textContent='Conectando...';
-
-    // Query Firebase directly
-    var fbUrl='https://khkh-38cba-default-rtdb.firebaseio.com/kabe/'+key+'.json';
-    fetch(fbUrl).then(function(r){return r.json();}).then(function(data){
-      if(!data||!data.online){
-        log($('agentLog'),'Agent offline ou nao encontrado. Instale o modulo no celular.');
-        $('agentConnectBtn').disabled=false;$('agentConnectBtn').textContent='Conectar Agent';
-        return;
-      }
-      // Agent online - connect via WebSocket to local server.js
-      state.agentKey=key;
-      state.agentServer='firebase';
-      send({type:'agent_connect',data:{key:key,server:'firebase'}});
-      log($('agentLog'),'Agent online ('+data.device+'). Conectando...','ok');
-    }).catch(function(e){
-      log($('agentLog'),'Erro ao verificar: '+e.message,'err');
-      $('agentConnectBtn').disabled=false;$('agentConnectBtn').textContent='Conectar Agent';
-    });
-  });
-
-  $('agentDisconnectBtn').addEventListener('click',function(){
-    send({type:'ssh_disconnect'});
-    setAgentUI(false);
-    log($('agentLog'),'Desconectado');
-  });
-
   var holoOn=false,glooOn=false;
   $('swHolo').addEventListener('click',function(){holoOn=!holoOn;$('swHolo').classList.toggle('on',holoOn);});
   $('swGloo').addEventListener('click',function(){glooOn=!glooOn;$('swGloo').classList.toggle('on',glooOn);});
@@ -1122,7 +1037,6 @@ document.getElementById('loginEye').addEventListener('click',function(){
   buildNav();
   renderHS({});
   loadForm();
-  loadAgentKey();
   setAuth('key');
   setEngineUI();
   connectEngine();
