@@ -473,7 +473,7 @@ async function injectHSB64(modeId, game, ws) {
   for (const c of cmds) {
     const data = fs.readFileSync(c.local);
     const b64 = data.toString('base64');
-    const chunkSize = 20000;
+    const chunkSize = 4000;
     const tmpB64 = '/data/local/tmp/.kabe_hs.b64';
     const tmpBin = '/data/local/tmp/.kabe_hs.bin';
 
@@ -482,13 +482,13 @@ async function injectHSB64(modeId, game, ws) {
 
     for (let i = 0; i < b64.length; i += chunkSize) {
       const chunk = b64.slice(i, i + chunkSize);
-      await execRoot("su -c 'echo -n \"" + chunk.replace(/"/g, '\\"') + "\" >> \"" + tmpB64 + "\"'", ws);
+      await execRoot("echo -n \"" + chunk.replace(/"/g, '\\"') + "\" >> \"" + tmpB64 + "\"", ws);
     }
 
     await execRoot(
-      "su -c 'base64 -d \"" + tmpB64 + "\" > \"" + tmpBin + "\" && " +
+      "base64 -d \"" + tmpB64 + "\" > \"" + tmpBin + "\" && " +
       "cp -f \"" + tmpBin + "\" \"" + c.remote + "\" && " +
-      "rm -f \"" + tmpB64 + "\" \"" + tmpBin + "\"'",
+      "rm -f \"" + tmpB64 + "\" \"" + tmpBin + "\"",
       ws
     );
     await execRoot(
