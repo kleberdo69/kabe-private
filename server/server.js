@@ -229,6 +229,30 @@ app.post('/api/agent/config', (req, res) => {
   res.json({ ok: true, server: serverUrl, key });
 });
 
+// ── Agent: utilitarios ──
+function stripAnsi(s) {
+  return String(s || '').replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '').replace(/\x1b\][^\x07]*\x07/g, '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+}
+function filterHoloLog(raw) {
+  const lines = stripAnsi(raw).split(/\r?\n/).map(l => l.trim()).filter(l => l);
+  const keep = [];
+  const important = /inject|restore|revert|error|fail|done|not found|deploy|game file|hologram|assets|patched|already/i;
+  for (const l of lines) {
+    if (important.test(l) || l.indexOf('✔') !== -1 || l.indexOf('✘') !== -1) {
+      keep.push(l);
+    }
+  }
+  if (keep.length === 0 && lines.length > 0) {
+    const last = lines[lines.length - 1];
+    keep.push(last.length > 120 ? last.slice(0, 120) + '...' : last);
+  }
+  return keep.slice(-15);
+}
+function filterHsLog(raw) {
+  const lines = stripAnsi(raw).split(/\r?\n/).map(l => l.trim()).filter(l => l);
+  return lines.slice(-5);
+}
+
 // ── Agent: executar comando via agent e esperar resultado ──
 function agentExec(key, cmd, timeout) {
   timeout = timeout || 30000;
@@ -353,7 +377,7 @@ app.post('/api/agent/holo-patch', async (req, res) => {
     logs.push('Executando choice ' + choice + '...');
     const r = await agentExec(key, 'sh ' + q(remoteScript) + ' ' + choice, 30000);
     if (r.output) {
-      r.output.split(/\r?\n/).forEach(ln => { if (ln.trim()) logs.push(ln.trim()); });
+      filterHoloLog(r.output).forEach(ln => logs.push(ln));
     }
 
     await agentExec(key, 'am force-stop ' + pkg, 15000);
@@ -392,7 +416,7 @@ app.post('/api/agent/holo-restore', async (req, res) => {
     const choice = g === 'max' ? 3 : 6;
     logs.push('Restaurando choice ' + choice + '...');
     const r = await agentExec(key, 'sh ' + q(remoteScript) + ' ' + choice, 30000);
-    if (r.output) r.output.split(/\r?\n/).forEach(ln => { if (ln.trim()) logs.push(ln.trim()); });
+    if (r.output) filterHoloLog(r.output).forEach(ln => logs.push(ln));
     await agentExec(key, 'am force-stop ' + pkg, 15000);
     logs.push('Jogo encerrado');
     res.json({ ok: true, logs });

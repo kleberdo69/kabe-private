@@ -454,6 +454,15 @@ body::after{
   .content{padding:18px 16px}
 }
 @media(max-width:480px){.fcards{grid-template-columns:1fr}}
+
+@keyframes fadeInUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.7}}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 8px rgba(255,45,62,.3)}50%{box-shadow:0 0 20px rgba(255,45,62,.5)}}
+.card{animation:fadeInUp .35s ease backwards}
+.log{transition:all .3s}
+.log div{animation:fadeInUp .2s ease backwards}
+.badge.on i{animation:pulse 1.8s infinite}
+.seg button.on{animation:glowPulse 3s infinite}
 </style>
 </head>
 <body>
@@ -965,16 +974,16 @@ document.getElementById('loginEye').addEventListener('click',function(){
       if(msg.ok){
         if(msg.out){
           var lines=String(msg.out).split(/\r?\n/)
-            .map(function(l){return l.replace(/\x1b\[[0-9;]*m/g,'');})
+            .map(function(l){return l.replace(/\x1b\[[0-9;]*[a-zA-Z]/g,'').replace(/\x1b\][^\x07]*\x07/g,'');})
             .map(function(l){return l.trim();})
-            .filter(function(l){return l;});
-          var main=null;
-          for(var k=lines.length-1;k>=0;k--){
-            var lt=lines[k].toLowerCase();
-            if(lt.indexOf('injected')!==-1||lt.indexOf('restored')!==-1||lt.indexOf('revert')!==-1||lines[k].indexOf('✔')!==-1||lines[k].indexOf('✘')!==-1||lt.indexOf('not found')!==-1){main=lines[k];break;}
+            .filter(function(l){return l.length>0&&l.length<200;});
+          var keywords=/inject|restore|revert|error|fail|done|not found|deploy|game file|hologram|assets|patched|already/i;
+          var kept=[];
+          for(var j=0;j<lines.length;j++){
+            if(keywords.test(lines[j])||lines[j].indexOf('✔')!==-1||lines[j].indexOf('✘')!==-1){kept.push(lines[j]);}
           }
-          if(main)log($('holoLog'),main,main.indexOf('✘')!==-1?'err':'ok');
-          else if(lines.length)log($('holoLog'),lines[lines.length-1]);
+          if(kept.length===0&&lines.length>0){kept.push(lines[lines.length-1]);}
+          kept.slice(-8).forEach(function(l){log($('holoLog'),l);});
         }
         log($('holoLog'),'Concluido','ok');
       }else log($('holoLog'),msg.error||'Falha','err');
