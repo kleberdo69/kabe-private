@@ -3,91 +3,104 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>KABE LINK</title>
+<title>KABE PRIVATE</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#08080c;color:#e8e8ec;min-height:100vh;padding:14px;max-width:400px;margin:0 auto}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#08080c;color:#e8e8ec;min-height:100vh;padding:14px;max-width:400px;margin:0 auto;overflow-x:hidden}
 
-.card{background:#111118;border:1px solid #1c1c2a;border-radius:14px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden}
-.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(220,38,38,.3),transparent)}
+.bg-glow{position:fixed;top:-40%;left:-20%;width:80%;height:80%;background:radial-gradient(circle,rgba(220,38,38,.06) 0%,transparent 70%);pointer-events:none;animation:drift 12s ease-in-out infinite alternate}
+.bg-glow2{position:fixed;bottom:-30%;right:-20%;width:70%;height:70%;background:radial-gradient(circle,rgba(185,28,28,.05) 0%,transparent 70%);pointer-events:none;animation:drift2 15s ease-in-out infinite alternate}
+@keyframes drift{0%{transform:translate(0,0)}100%{transform:translate(30px,40px)}}
+@keyframes drift2{0%{transform:translate(0,0)}100%{transform:translate(-20px,-30px)}}
 
-.brand{text-align:center;margin-bottom:18px}
-.brand h1{font-size:24px;font-weight:800;letter-spacing:3px;background:linear-gradient(135deg,#ef4444,#dc2626,#b91c1c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:2px}
-.brand .tag{font-size:10px;color:#555;letter-spacing:2px;text-transform:uppercase}
+.card{background:#111118;border:1px solid #1c1c2a;border-radius:14px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden;animation:slideUp .4s ease backwards}
+.card:nth-child(2){animation-delay:.1s}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(220,38,38,.4),transparent)}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 
-.key-box{background:#0a0a10;border:1.5px solid #dc2626;border-radius:10px;padding:18px 14px;text-align:center;margin:14px 0;cursor:pointer;transition:all .15s}
-.key-box:active{transform:scale(.98);border-color:#ef4444;box-shadow:0 0 20px rgba(220,38,38,.15)}
-.key-box .lbl{font-size:9px;text-transform:uppercase;letter-spacing:3px;color:#666;margin-bottom:10px}
-.key-box .key{font-size:16px;font-weight:800;color:#ef4444;font-family:'SF Mono',Menlo,monospace;word-break:break-all;user-select:all;line-height:1.5}
-.key-box .hint{font-size:10px;color:#444;margin-top:10px}
+.brand{text-align:center;margin-bottom:20px;position:relative}
+.brand h1{font-size:26px;font-weight:900;letter-spacing:4px;background:linear-gradient(135deg,#f87171,#dc2626,#991b1b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:glow 3s ease-in-out infinite alternate;position:relative}
+@keyframes glow{0%{filter:brightness(1);text-shadow:0 0 0 transparent}50%{filter:brightness(1.2);text-shadow:0 0 30px rgba(220,38,38,.2)}100%{filter:brightness(1);text-shadow:0 0 0 transparent}}
+.brand .tag{font-size:9px;color:#444;letter-spacing:4px;text-transform:uppercase;margin-top:4px;animation:fadeIn .6s ease .2s backwards}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
-.status-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #15151f}
+.key-box{background:#0a0a10;border:1.5px solid #dc2626;border-radius:10px;padding:20px 14px;text-align:center;margin:14px 0;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.key-box::after{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:conic-gradient(from 0deg,transparent,rgba(220,38,38,.05),transparent,rgba(220,38,38,.05),transparent);animation:rotate 8s linear infinite;pointer-events:none}
+@keyframes rotate{to{transform:rotate(360deg)}}
+.key-box:active{transform:scale(.97);border-color:#f87171;box-shadow:0 0 30px rgba(220,38,38,.2)}
+.key-box .lbl{font-size:9px;text-transform:uppercase;letter-spacing:3px;color:#555;margin-bottom:10px;position:relative;z-index:1}
+.key-box .key{font-size:15px;font-weight:800;color:#ef4444;font-family:'SF Mono',Menlo,monospace;word-break:break-all;user-select:all;line-height:1.6;position:relative;z-index:1}
+.key-box .hint{font-size:10px;color:#333;margin-top:10px;position:relative;z-index:1}
+
+.status-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #14141e}
 .status-row:last-child{border-bottom:none}
-.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;transition:all .3s}
-.dot.on{background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,.5)}
-.dot.off{background:#444;box-shadow:none}
-.dot.wait{background:#f59e0b;box-shadow:0 0 8px rgba(245,158,11,.4);animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.lbl2{font-size:12px;color:#666;flex:1;text-transform:uppercase;letter-spacing:1px}
-.val{font-size:12px;color:#ccc;font-weight:600;font-family:'SF Mono',Menlo,monospace}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;transition:all .4s}
+.dot.on{background:#22c55e;box-shadow:0 0 10px rgba(34,197,94,.5);animation:dotPulse 2s infinite}
+.dot.off{background:#333;box-shadow:none}
+.dot.wait{background:#f59e0b;box-shadow:0 0 10px rgba(245,158,11,.4);animation:dotPulse 1.5s infinite}
+@keyframes dotPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
+.lbl2{font-size:11px;color:#555;flex:1;text-transform:uppercase;letter-spacing:1.5px}
+.val{font-size:11px;color:#aaa;font-weight:600;font-family:'SF Mono',Menlo,monospace;transition:color .3s}
 
-.divider{height:1px;background:linear-gradient(90deg,transparent,#1c1c2a,transparent);margin:6px 0}
+.divider{height:1px;background:linear-gradient(90deg,transparent,#1c1c2a,transparent);margin:4px 0}
 
-.info-box{background:#0a0a10;border:1px solid #1a1a26;border-radius:8px;padding:12px 14px;margin-top:14px}
-.info-box .row{display:flex;justify-content:space-between;padding:5px 0;font-size:11px}
-.info-box .row .k{color:#555}
-.info-box .row .v{color:#999;font-family:'SF Mono',Menlo,monospace}
+.link-box{background:#0a0a10;border:1px solid #1a1a26;border-radius:8px;padding:14px;margin-top:14px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.link-box::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(220,38,38,.03),transparent);pointer-events:none}
+.link-box:active{border-color:#dc2626;transform:scale(.98)}
+.link-box .lbl{font-size:9px;text-transform:uppercase;letter-spacing:3px;color:#444;margin-bottom:6px}
+.link-box .url{font-size:11px;color:#ef4444;font-family:'SF Mono',Menlo,monospace;word-break:break-all}
+.link-box .hint{font-size:10px;color:#2a2a2a;margin-top:6px}
 
-.link-box{background:#0a0a10;border:1px solid #1a1a26;border-radius:8px;padding:12px;margin-top:12px;cursor:pointer;transition:all .15s}
-.link-box:active{border-color:#dc2626}
-.link-box .lbl{font-size:9px;text-transform:uppercase;letter-spacing:3px;color:#555;margin-bottom:6px}
-.link-box .url{font-size:12px;color:#ef4444;font-family:'SF Mono',Menlo,monospace;word-break:break-all}
-.link-box .hint{font-size:10px;color:#333;margin-top:6px}
+.steps{padding:14px;background:#0a0a10;border-radius:8px;border:1px solid #13131d;position:relative;overflow:hidden}
+.steps::before{content:'';position:absolute;top:0;left:0;width:2px;height:100%;background:linear-gradient(to bottom,#dc2626,transparent);border-radius:1px}
+.steps .title{font-size:9px;text-transform:uppercase;letter-spacing:3px;color:#444;margin-bottom:12px;padding-left:10px}
+.steps .step{display:flex;gap:10px;padding:6px 0 6px 10px;font-size:11px;color:#555;transition:color .2s}
+.steps .step:hover{color:#888}
+.steps .step .n{color:#dc2626;font-weight:800;flex-shrink:0;width:16px;font-size:12px}
+.steps .step .t{color:#555}
 
-.steps{margin-top:14px;padding:14px;background:#0a0a10;border-radius:8px;border:1px solid #15151f}
-.steps .title{font-size:9px;text-transform:uppercase;letter-spacing:3px;color:#444;margin-bottom:10px}
-.steps .step{display:flex;gap:8px;padding:5px 0;font-size:11px;color:#555}
-.steps .step .n{color:#dc2626;font-weight:700;flex-shrink:0;width:14px}
-.steps .step .t{color:#666}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;padding:12px 28px;border-radius:10px;font-size:12px;font-weight:600;z-index:999;display:none;box-shadow:0 8px 30px rgba(220,38,38,.3);animation:toastIn .3s ease forwards}
+@keyframes toastIn{to{transform:translateX(-50%) translateY(0)}}
 
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#dc2626;color:#fff;padding:10px 28px;border-radius:8px;font-size:12px;font-weight:600;z-index:999;display:none;box-shadow:0 4px 20px rgba(220,38,38,.3)}
-
-@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.card{animation:fade .3s ease}
+.skeleton{background:linear-gradient(90deg,#14141e 25%,#1a1a28 50%,#14141e 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px;height:14px;display:inline-block}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 </style>
 </head>
 <body>
 
+<div class="bg-glow"></div>
+<div class="bg-glow2"></div>
+
 <div class="card">
   <div class="brand">
-    <h1>KABE LINK</h1>
-    <div class="tag">Conexao reversa</div>
+    <h1>KABE PRIVATE</h1>
+    <div class="tag">v1.0</div>
   </div>
 
   <div class="key-box" onclick="copyKey()">
     <div class="lbl">Sua Key</div>
-    <div class="key" id="keyText">...</div>
+    <div class="key" id="keyText"><span class="skeleton" style="width:120px">&nbsp;</span></div>
     <div class="hint">Toque para copiar</div>
   </div>
 
   <div class="status-row">
     <div class="dot wait" id="dotAgent"></div>
     <span class="lbl2">Agent</span>
-    <span class="val" id="valAgent">...</span>
+    <span class="val" id="valAgent"><span class="skeleton" style="width:60px">&nbsp;</span></span>
   </div>
   <div class="status-row">
     <div class="dot" id="dotServer"></div>
     <span class="lbl2">Servidor</span>
-    <span class="val" id="valServer">...</span>
+    <span class="val" id="valServer"><span class="skeleton" style="width:50px">&nbsp;</span></span>
   </div>
   <div class="divider"></div>
   <div class="status-row">
     <span class="lbl2">IP</span>
-    <span class="val" id="valIp">...</span>
+    <span class="val" id="valIp"><span class="skeleton" style="width:90px">&nbsp;</span></span>
   </div>
   <div class="status-row">
     <span class="lbl2">Device</span>
-    <span class="val" id="valDevice">...</span>
+    <span class="val" id="valDevice"><span class="skeleton" style="width:100px">&nbsp;</span></span>
   </div>
   <div class="status-row">
     <span class="lbl2">Porta</span>
@@ -96,7 +109,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
   <div class="link-box" onclick="copyLink()">
     <div class="lbl">Acesso Remoto</div>
-    <div class="url" id="publicUrl">...</div>
+    <div class="url" id="publicUrl"><span class="skeleton" style="width:150px">&nbsp;</span></div>
     <div class="hint">Toque para copiar</div>
   </div>
 </div>
@@ -106,7 +119,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <div class="title">Como usar</div>
     <div class="step"><span class="n">1</span><span class="t">Copie a Key acima</span></div>
     <div class="step"><span class="n">2</span><span class="t">Abra o site KABE PRIVATE</span></div>
-    <div class="step"><span class="n">3</span><span class="t">Cole a Key na aba Link</span></div>
+    <div class="step"><span class="n">3</span><span class="t">Cole na aba Dispositivo</span></div>
     <div class="step"><span class="n">4</span><span class="t">Use HS / Holograma de qualquer lugar</span></div>
   </div>
 </div>
@@ -114,19 +127,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <div class="toast" id="toast"></div>
 
 <script>
+var prevOnline=null;
 function $(id){return document.getElementById(id)}
 function toast(m){var t=$('toast');t.textContent=m;t.style.display='block';setTimeout(function(){t.style.display='none'},2200)}
 
 function copyKey(){
   var k=$('keyText').textContent;
-  if(!k||k==='...')return;
+  if(!k||k.indexOf('...')>-1)return;
   if(navigator.clipboard){navigator.clipboard.writeText(k).then(function(){toast('Key copiada!');});}
   else{var t=document.createElement('textarea');t.value=k;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);toast('Key copiada!');}
 }
 
 function copyLink(){
   var u=$('publicUrl').textContent;
-  if(!u||u==='...')return;
+  if(!u||u.indexOf('...')>-1)return;
   if(navigator.clipboard){navigator.clipboard.writeText(u).then(function(){toast('Link copiado!');});}
   else{var t=document.createElement('textarea');t.value=u;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);toast('Link copiado!');}
 }
@@ -135,8 +149,13 @@ function updateUI(d){
   $('keyText').textContent=d.key||'...';
 
   var dotA=$('dotAgent'),valA=$('valAgent');
-  if(d.agentOnline){dotA.className='dot on';valA.textContent='ONLINE';valA.style.color='#22c55e';}
-  else{dotA.className='dot off';valA.textContent='OFFLINE';valA.style.color='#666';}
+  if(d.agentOnline){
+    dotA.className='dot on';valA.textContent='ONLINE';valA.style.color='#22c55e';
+    if(prevOnline===false){toast('Dispositivo conectado!');}
+  }else{
+    dotA.className='dot off';valA.textContent='OFFLINE';valA.style.color='#666';
+  }
+  prevOnline=!!d.agentOnline;
 
   var dotS=$('dotServer'),valS=$('valServer');
   if(d.serverReachable){dotS.className='dot on';valS.textContent='OK';valS.style.color='#22c55e';}
