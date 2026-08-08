@@ -281,13 +281,13 @@ app.post('/api/agent/hs-inject', async (req, res) => {
       const tmpB64 = '/data/local/tmp/.kabe_hs.b64';
       const tmpBin = '/data/local/tmp/.kabe_hs.bin';
 
-      await agentExec(key, 'rm -f ' + JSON.stringify(tmpB64) + ' ' + JSON.stringify(tmpBin), 5000);
-      await agentExec(key, 'touch ' + JSON.stringify(f + ' at ' + target) + ' && chmod 666 ' + JSON.stringify(target + f), 5000);
+      await agentExec(key, 'rm -f ' + JSON.stringify(tmpB64) + ' ' + JSON.stringify(tmpBin), 15000);
+      await agentExec(key, 'touch ' + JSON.stringify(f + ' at ' + target) + ' && chmod 666 ' + JSON.stringify(target + f), 15000);
 
       const chunkSize = 20000;
       for (let i = 0; i < b64.length; i += chunkSize) {
         const chunk = b64.slice(i, i + chunkSize);
-        await agentExec(key, 'echo -n ' + JSON.stringify(chunk) + ' >> ' + JSON.stringify(tmpB64), 10000);
+        await agentExec(key, 'echo -n ' + JSON.stringify(chunk) + ' >> ' + JSON.stringify(tmpB64), 15000);
       }
       logs.push('Base64 enviado (' + b64.length + ' chars)');
 
@@ -301,7 +301,7 @@ app.post('/api/agent/hs-inject', async (req, res) => {
       logs.push('Arquivo injetado: ' + f);
     }
 
-    await agentExec(key, 'am force-stop ' + pkg, 5000);
+    await agentExec(key, 'am force-stop ' + pkg, 15000);
     logs.push('Jogo encerrado');
     res.json({ ok: true, logs });
   } catch (e) {
@@ -329,12 +329,12 @@ app.post('/api/agent/holo-patch', async (req, res) => {
     const remoteScript = '/data/local/tmp/kabe_holo.sh';
     const tmpB64 = '/data/local/tmp/.kabe_holo.b64';
 
-    await agentExec(key, 'rm -f ' + JSON.stringify(tmpB64) + ' ' + JSON.stringify(remoteScript), 5000);
+    await agentExec(key, 'rm -f ' + JSON.stringify(tmpB64) + ' ' + JSON.stringify(remoteScript), 15000);
 
     const chunkSize = 20000;
     for (let i = 0; i < b64.length; i += chunkSize) {
       const chunk = b64.slice(i, i + chunkSize);
-      await agentExec(key, 'echo -n ' + JSON.stringify(chunk) + ' >> ' + JSON.stringify(tmpB64), 10000);
+      await agentExec(key, 'echo -n ' + JSON.stringify(chunk) + ' >> ' + JSON.stringify(tmpB64), 15000);
     }
 
     await agentExec(key,
@@ -361,7 +361,7 @@ app.post('/api/agent/holo-patch', async (req, res) => {
       r.output.split(/\r?\n/).forEach(ln => { if (ln.trim()) logs.push(ln.trim()); });
     }
 
-    await agentExec(key, 'am force-stop ' + pkg, 5000);
+    await agentExec(key, 'am force-stop ' + pkg, 15000);
     logs.push('Jogo encerrado');
     res.json({ ok: true, logs });
   } catch (e) {
@@ -392,15 +392,15 @@ app.post('/api/agent/holo-restore', async (req, res) => {
     const remoteScript = '/data/local/tmp/kabe_holo.sh';
     const tmpB64 = '/data/local/tmp/.kabe_holo.b64';
 
-    await agentExec(key, 'rm -f ' + JSON.stringify(tmpB64) + ' ' + JSON.stringify(remoteScript), 5000);
+    await agentExec(key, 'rm -f ' + JSON.stringify(tmpB64) + ' ' + JSON.stringify(remoteScript), 15000);
     const chunkSize = 20000;
     for (let i = 0; i < b64.length; i += chunkSize) {
-      await agentExec(key, 'echo -n ' + JSON.stringify(b64.slice(i, i + chunkSize)) + ' >> ' + JSON.stringify(tmpB64), 10000);
+      await agentExec(key, 'echo -n ' + JSON.stringify(b64.slice(i, i + chunkSize)) + ' >> ' + JSON.stringify(tmpB64), 15000);
     }
     await agentExec(key,
       'base64 -d ' + JSON.stringify(tmpB64) + ' > ' + JSON.stringify(remoteScript) + ' && ' +
       'chmod 777 ' + JSON.stringify(remoteScript) + ' && rm -f ' + JSON.stringify(tmpB64),
-      10000
+      15000
     );
     logs.push('Script enviado');
 
@@ -409,7 +409,7 @@ app.post('/api/agent/holo-restore', async (req, res) => {
     const r = await agentExec(key, 'sh ' + JSON.stringify(remoteScript) + ' ' + choice, 30000);
     if (r.output) r.output.split(/\r?\n/).forEach(ln => { if (ln.trim()) logs.push(ln.trim()); });
 
-    await agentExec(key, 'am force-stop ' + pkg, 5000);
+    await agentExec(key, 'am force-stop ' + pkg, 15000);
     logs.push('Jogo encerrado');
     res.json({ ok: true, logs });
   } catch (e) {
