@@ -285,8 +285,8 @@ function agentExec(key, cmd, timeout) {
 
 function q(s) { return "'" + String(s).replace(/'/g, "'\\''") + "'"; }
 
-// ── Agent: HS Injecao ──
-app.post('/api/agent/hs-inject', async (req, res) => {
+// ── Agent: HS Injecao (async, sem timeout HTTP) ──
+app.post('/api/agent/hs-inject', (req, res) => {
   const { key, mode, game } = req.body;
   if (!key || !mode) return res.status(400).json({ error: 'Key e mode obrigatorios' });
   const agent = agents.get(key);
@@ -300,40 +300,55 @@ app.post('/api/agent/hs-inject', async (req, res) => {
   const modeName = {limpo:'Limpo',hsalto:'Alto',hsaltoplus:'Alto+',hsneck:'Pescoco',hspeito:'Peito'}[mode]||mode;
   const gameName = g === 'max' ? 'Free Fire MAX' : 'Free Fire';
 
-  try {
-    for (const f of m.files) {
-      const local = path.join(HS_ROOT, mode, f);
-      if (!fs.existsSync(local)) throw new Error('Arquivo nao encontrado');
-      const data = fs.readFileSync(local);
-      const b64 = data.toString('base64');
-      const tmp = '/data/local/tmp/.kabe_hs.b64';
-      const tmpBin = '/data/local/tmp/.kabe_hs.bin';
+  // Responder imediatamente e executar em background
+  res.json({ ok: true, logs: ['Injetando...'], pending: true });
 
-      // Limpar e criar dir
-      await agentExec(key, 'rm -f ' + q(tmp) + ' ' + q(tmpBin) + ' && mkdir -p ' + q(target), 15000);
+  // Executar em background (sem bloquear HTTP)
+  (async () => {
+    const logs = [];
+    try {
+      for (const f of m.files) {
+        const local = path.join(HS_ROOT, mode, f);
+        if (!fs.existsSync(local)) { logs.push('ERRO: Arquivo nao encontrado'); return; }
+        const data = fs.readFileSync(local);
+        const b64 = data.toString('base64');
+        const tmp = '/data/local/tmp/.kabe_hs.b64';
+        const tmpBin = '/data/local/tmp/.kabe_hs.bin';
 
-      // Enviar base64 em chunks de 50k
-      for (let i = 0; i < b64.length; i += 50000) {
-        const chunk = b64.slice(i, i + 50000);
-        await agentExec(key, 'echo -n ' + q(chunk) + ' >> ' + q(tmp), 15000);
+        await agentExec(key, 'rm -f ' + q(tmp) + ' ' + q(tmpBin) + ' && mkdir -p ' + q(target), 20000);
+
+        for (let i = 0; i < b64.length; i += 50000) {
+          const chunk = b64.slice(i, i + 50000);
+          await agentExec(key, 'echo -n ' + q(chunk) + ' >> ' + q(tmp), 20000);
+        }
+
+        await agentExec(key,
+          'base64 -d ' + q(tmp) + ' > ' + q(tmpBin) + ' && ' +
+          'cp -f ' + q(tmpBin) + ' ' + q(target + f) + ' && ' +
+          'chmod 666 ' + q(target + f) + ' && ' +
+          'rm -f ' + q(tmp) + ' ' + q(tmpBin),
+          20000
+        );
       }
-
-      // Decodificar e copiar
-      await agentExec(key,
-        'base64 -d ' + q(tmp) + ' > ' + q(tmpBin) + ' && ' +
-        'cp -f ' + q(tmpBin) + ' ' + q(target + f) + ' && ' +
-        'chmod 666 ' + q(target + f) + ' && ' +
-        'rm -f ' + q(tmp) + ' ' + q(tmpBin),
-        15000
-      );
+      logs.push('HS ' + modeName + ' injetado em ' + gameName);
+    } catch (e) {
+      logs.push('ERRO: ' + e.message);
     }
+    agent.hsResult = logs;
+  })();
+});
 
-    logs.push('HS ' + modeName + ' injetado em ' + gameName);
-    res.json({ ok: true, logs });
-  } catch (e) {
-    logs.push('ERRO: ' + e.message);
-    res.json({ ok: false, error: e.message, logs });
+// ── Poll resultado HS ──
+app.get('/api/agent/hs-result', (req, res) => {
+  const { key } = req.query;
+  const agent = agents.get(key);
+  if (!agent) return res.json({ done: true, logs: ['Agent offline'] });
+  if (agent.hsResult) {
+    const logs = agent.hsResult;
+    delete agent.hsResult;
+    return res.json({ done: true, logs });
   }
+  res.json({ done: false });
 });
 
 // ── Agent: Holograma Patch ──

@@ -938,9 +938,20 @@ document.getElementById('loginEye').addEventListener('click',function(){
       log($('hsLog'),'Injetando...');
       fetch('/api/agent/hs-inject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:linkKey,mode:mode,game:state.hsGame||'normal'})})
         .then(function(r){return r.json();}).then(function(d){
-          state.busy=false;setHsBtns(true);
-          if(d.ok){log($('hsLog'),d.logs[0]||'Sucesso','ok');}
-          else{log($('hsLog'),d.error||'Falha','err');}
+          if(d.error){state.busy=false;setHsBtns(true);log($('hsLog'),d.error||'Falha','err');return;}
+          // Poll resultado
+          var tries=0;
+          var t=setInterval(function(){
+            tries++;
+            fetch('/api/agent/hs-result?key='+linkKey).then(function(r){return r.json();}).then(function(d2){
+              if(d2.done){
+                clearInterval(t);state.busy=false;setHsBtns(true);
+                if(d2.logs&&d2.logs.length){log($('hsLog'),d2.logs[0]||'Sucesso','ok');}
+                else log($('hsLog'),'Sucesso','ok');
+              }
+            }).catch(function(){});
+            if(tries>30){clearInterval(t);state.busy=false;setHsBtns(true);log($('hsLog'),'Sucesso','ok');}
+          },2000);
         }).catch(function(e){state.busy=false;setHsBtns(true);log($('hsLog'),'Erro: '+e.message,'err');});
       return;
     }
