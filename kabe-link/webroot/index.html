@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>KABE LINK</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#08080c;color:#e8e8ec;min-height:100vh;padding:14px;max-width:400px;margin:0 auto}
+
+.card{background:#111118;border:1px solid #1c1c2a;border-radius:14px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(220,38,38,.3),transparent)}
+
+.brand{text-align:center;margin-bottom:18px}
+.brand h1{font-size:24px;font-weight:800;letter-spacing:3px;background:linear-gradient(135deg,#ef4444,#dc2626,#b91c1c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:2px}
+.brand .tag{font-size:10px;color:#555;letter-spacing:2px;text-transform:uppercase}
+
+.key-box{background:#0a0a10;border:1.5px solid #dc2626;border-radius:10px;padding:18px 14px;text-align:center;margin:14px 0;cursor:pointer;transition:all .15s}
+.key-box:active{transform:scale(.98);border-color:#ef4444;box-shadow:0 0 20px rgba(220,38,38,.15)}
+.key-box .lbl{font-size:9px;text-transform:uppercase;letter-spacing:3px;color:#666;margin-bottom:10px}
+.key-box .key{font-size:16px;font-weight:800;color:#ef4444;font-family:'SF Mono',Menlo,monospace;word-break:break-all;user-select:all;line-height:1.5}
+.key-box .hint{font-size:10px;color:#444;margin-top:10px}
+
+.status-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #15151f}
+.status-row:last-child{border-bottom:none}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;transition:all .3s}
+.dot.on{background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,.5)}
+.dot.off{background:#444;box-shadow:none}
+.dot.wait{background:#f59e0b;box-shadow:0 0 8px rgba(245,158,11,.4);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.lbl2{font-size:12px;color:#666;flex:1;text-transform:uppercase;letter-spacing:1px}
+.val{font-size:12px;color:#ccc;font-weight:600;font-family:'SF Mono',Menlo,monospace}
+
+.divider{height:1px;background:linear-gradient(90deg,transparent,#1c1c2a,transparent);margin:6px 0}
+
+.info-box{background:#0a0a10;border:1px solid #1a1a26;border-radius:8px;padding:12px 14px;margin-top:14px}
+.info-box .row{display:flex;justify-content:space-between;padding:5px 0;font-size:11px}
+.info-box .row .k{color:#555}
+.info-box .row .v{color:#999;font-family:'SF Mono',Menlo,monospace}
+
+.link-box{background:#0a0a10;border:1px solid #1a1a26;border-radius:8px;padding:12px;margin-top:12px;cursor:pointer;transition:all .15s}
+.link-box:active{border-color:#dc2626}
+.link-box .lbl{font-size:9px;text-transform:uppercase;letter-spacing:3px;color:#555;margin-bottom:6px}
+.link-box .url{font-size:12px;color:#ef4444;font-family:'SF Mono',Menlo,monospace;word-break:break-all}
+.link-box .hint{font-size:10px;color:#333;margin-top:6px}
+
+.steps{margin-top:14px;padding:14px;background:#0a0a10;border-radius:8px;border:1px solid #15151f}
+.steps .title{font-size:9px;text-transform:uppercase;letter-spacing:3px;color:#444;margin-bottom:10px}
+.steps .step{display:flex;gap:8px;padding:5px 0;font-size:11px;color:#555}
+.steps .step .n{color:#dc2626;font-weight:700;flex-shrink:0;width:14px}
+.steps .step .t{color:#666}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#dc2626;color:#fff;padding:10px 28px;border-radius:8px;font-size:12px;font-weight:600;z-index:999;display:none;box-shadow:0 4px 20px rgba(220,38,38,.3)}
+
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.card{animation:fade .3s ease}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="brand">
+    <h1>KABE LINK</h1>
+    <div class="tag">Conexao reversa</div>
+  </div>
+
+  <div class="key-box" onclick="copyKey()">
+    <div class="lbl">Sua Key</div>
+    <div class="key" id="keyText">...</div>
+    <div class="hint">Toque para copiar</div>
+  </div>
+
+  <div class="status-row">
+    <div class="dot wait" id="dotAgent"></div>
+    <span class="lbl2">Agent</span>
+    <span class="val" id="valAgent">...</span>
+  </div>
+  <div class="status-row">
+    <div class="dot" id="dotServer"></div>
+    <span class="lbl2">Servidor</span>
+    <span class="val" id="valServer">...</span>
+  </div>
+  <div class="divider"></div>
+  <div class="status-row">
+    <span class="lbl2">IP</span>
+    <span class="val" id="valIp">...</span>
+  </div>
+  <div class="status-row">
+    <span class="lbl2">Device</span>
+    <span class="val" id="valDevice">...</span>
+  </div>
+  <div class="status-row">
+    <span class="lbl2">Porta</span>
+    <span class="val" id="valPort">9090</span>
+  </div>
+
+  <div class="link-box" onclick="copyLink()">
+    <div class="lbl">Acesso Remoto</div>
+    <div class="url" id="publicUrl">...</div>
+    <div class="hint">Toque para copiar</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="steps">
+    <div class="title">Como usar</div>
+    <div class="step"><span class="n">1</span><span class="t">Copie a Key acima</span></div>
+    <div class="step"><span class="n">2</span><span class="t">Abra o site KABE PRIVATE</span></div>
+    <div class="step"><span class="n">3</span><span class="t">Cole a Key na aba Link</span></div>
+    <div class="step"><span class="n">4</span><span class="t">Use HS / Holograma de qualquer lugar</span></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function $(id){return document.getElementById(id)}
+function toast(m){var t=$('toast');t.textContent=m;t.style.display='block';setTimeout(function(){t.style.display='none'},2200)}
+
+function copyKey(){
+  var k=$('keyText').textContent;
+  if(!k||k==='...')return;
+  if(navigator.clipboard){navigator.clipboard.writeText(k).then(function(){toast('Key copiada!');});}
+  else{var t=document.createElement('textarea');t.value=k;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);toast('Key copiada!');}
+}
+
+function copyLink(){
+  var u=$('publicUrl').textContent;
+  if(!u||u==='...')return;
+  if(navigator.clipboard){navigator.clipboard.writeText(u).then(function(){toast('Link copiado!');});}
+  else{var t=document.createElement('textarea');t.value=u;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);toast('Link copiado!');}
+}
+
+function updateUI(d){
+  $('keyText').textContent=d.key||'...';
+
+  var dotA=$('dotAgent'),valA=$('valAgent');
+  if(d.agentOnline){dotA.className='dot on';valA.textContent='ONLINE';valA.style.color='#22c55e';}
+  else{dotA.className='dot off';valA.textContent='OFFLINE';valA.style.color='#666';}
+
+  var dotS=$('dotServer'),valS=$('valServer');
+  if(d.serverReachable){dotS.className='dot on';valS.textContent='OK';valS.style.color='#22c55e';}
+  else{dotS.className='dot off';valS.textContent='ERRO';valS.style.color='#ef4444';}
+
+  $('valIp').textContent=d.ip||'...';
+  $('valDevice').textContent=d.device||'...';
+  $('valPort').textContent=d.webPort||'9090';
+
+  var ip=d.ip||'';
+  if(ip&&ip!=='unknown'){$('publicUrl').textContent='http://'+ip+':'+(d.webPort||9090);}
+  else{$('publicUrl').textContent='Aguardando IP...';}
+}
+
+function fetchStatus(){
+  fetch('/status.json?t='+Date.now())
+    .then(function(r){return r.json();})
+    .then(function(d){updateUI(d);})
+    .catch(function(){});
+}
+
+fetchStatus();
+setInterval(fetchStatus,3000);
+</script>
+</body>
+</html>
