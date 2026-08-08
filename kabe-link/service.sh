@@ -98,8 +98,13 @@ EOF
 
 # ===== GERAR KEY SE NAO EXISTIR =====
 if [ ! -f "$KEY_FILE" ]; then
-    RANDOM_PART=$(cat /proc/sys/kernel/random/uuid 2>/dev/null | tr -d '-' | head -c 8 | tr 'a-z' 'A-Z')
-    [ -z "$RANDOM_PART" ] && RANDOM_PART=$(date +%s | md5sum 2>/dev/null | head -c 8 | tr 'a-z' 'A-Z')
+    RANDOM_PART=$(cat /proc/sys/kernel/random/uuid 2>/dev/null | tr -d '-' | head -c 16 | tr 'a-z' 'A-Z')
+    if [ -z "$RANDOM_PART" ]; then
+        RANDOM_PART=$(date +%s%N 2>/dev/null | md5sum 2>/dev/null | head -c 16 | tr 'a-z' 'A-Z')
+    fi
+    if [ -z "$RANDOM_PART" ]; then
+        RANDOM_PART=$(cat /dev/urandom 2>/dev/null | tr -dc 'A-F0-9' | head -c 16)
+    fi
     KEY="KABE-${RANDOM_PART}"
     echo "$KEY" > "$KEY_FILE"
     chmod 600 "$KEY_FILE"
