@@ -760,6 +760,23 @@ wss.on('connection', (ws) => {
       safeSend(ws, { type: 'engine_status', mode: 'live', ssh: false });
     }
 
+    else if (msg.type === 'agent_connect') {
+      const key = msg.data && msg.data.key;
+      if (!key) { safeSend(ws, { type: 'ssh_status', status: 'error', msg: 'Key obrigatoria' }); return; }
+      const agent = agents.get(key);
+      if (!agent || !agent.online) {
+        safeSend(ws, { type: 'ssh_status', status: 'error', msg: 'Agent nao encontrado ou offline. Instale o modulo no celular.' });
+        return;
+      }
+      useAgent = true;
+      agentKey = key;
+      rootMethod = 'su';
+      safeSend(ws, { type: 'ssh_status', status: 'connected', mode: 'agent' });
+      safeSend(ws, { type: 'engine_status', mode: 'live', ssh: true });
+      safeSend(ws, { type: 'exec_done', root: true, code: 0 });
+      log(ws, 'Conectado via AGENTE: ' + key);
+    }
+
     else if (msg.type === 'exec' && msg.data && msg.data.cmd) {
       safeSend(ws, { type: 'exec_start' });
       cmdQueue = cmdQueue.then(async () => {
