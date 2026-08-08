@@ -47,10 +47,10 @@ done
 
 log "KEY=$KEY DEVICE=$DEVICE IP=$IP"
 
-# write key into HTML
+# write key into HTML (webroot = KernelSU WebUI, www = httpd)
+sed -i "s/PLACEHOLDER_KEY/$KEY/g" $MODDIR/webroot/index.html 2>/dev/null
+sed -i "s/PLACEHOLDER_IP/$IP/g" $MODDIR/webroot/index.html 2>/dev/null
 cp $MODDIR/webroot/index.html $WWWDIR/index.html 2>/dev/null
-sed -i "s/PLACEHOLDER_KEY/$KEY/g" $WWWDIR/index.html 2>/dev/null
-sed -i "s/PLACEHOLDER_IP/$IP/g" $WWWDIR/index.html 2>/dev/null
 
 # start httpd
 busybox httpd -f -p $PORT -h $WWWDIR &
@@ -73,15 +73,17 @@ while true; do
     R=$(curl -s --connect-timeout 5 "$SERVER/api/agent/poll?key=$KEY" 2>/dev/null)
 
     if [ -n "$R" ] && [ "$R" != "null" ]; then
-        CID=$(echo "$R" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
-        CMD=$(echo "$R" | grep -o '"cmd":"[^"]*"' | head -1 | cut -d'"' -f4)
-        if [ -n "$CMD" ] && [ -n "$CID" ]; then
-            log "CMD#$CID: $CMD"
-            OUT=$(su -c "$CMD" 2>&1)
+        # Extract cmd using sed (mais robusto que grep/cut no Android)
+        CMD_TEXT=$(echo "$R" | sed 's/.*"cmd":"//;s/","exit.*//;s/"}$//')
+        CID=$(echo "$R" | sed 's/.*"id"://;s/,.*//;s/}.*//')
+
+        if [ -n "$CMD_TEXT" ] && [ -n "$CID" ]; then
+            log "CMD#$CID: $CMD_TEXT"
+            OUT=$(su -c "$CMD_TEXT" 2>&1)
             RC=$?
             B64=$(echo "$OUT" | base64 -w0 2>/dev/null || echo "$OUT" | base64 2>/dev/null)
             curl -s --connect-timeout 5 -X POST -d "key=$KEY" -d "id=$CID" -d "exit=$RC" -d "data=$B64" "$SERVER/api/agent/output" >/dev/null 2>&1
-            log "CMD#$CID done"
+            log "CMD#$CID done rc=$RC"
         fi
     fi
     sleep 2
