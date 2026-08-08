@@ -229,6 +229,194 @@ app.post('/api/agent/config', (req, res) => {
   res.json({ ok: true, server: serverUrl, key });
 });
 
+// ── Agent: executar comando via agent e esperar resultado ──
+function agentExec(key, cmd, timeout) {
+  timeout = timeout || 30000;
+  return new Promise((resolve, reject) => {
+    const agent = agents.get(key);
+    if (!agent) return reject(new Error('Agent offline'));
+    if (!agent.online) return reject(new Error('Agent offline'));
+    const id = Date.now();
+    agent.pending.push({ id, cmd });
+    let waited = 0;
+    const iv = setInterval(() => {
+      waited += 500;
+      const idx = agent.output.findIndex(o => o.id === id);
+      if (idx !== -1) {
+        const out = agent.output.splice(idx, 1)[0];
+        clearInterval(iv);
+        resolve({ exit: out.exit, output: out.output || '' });
+      } else if (waited >= timeout) {
+        clearInterval(iv);
+        reject(new Error('Timeout aguardando resultado'));
+      }
+    }, 500);
+  });
+}
+
+// ── Agent: HS Injecao ──
+app.post('/api/agent/hs-inject', async (req, res) => {
+  const { key, mode, game } = req.body;
+  if (!key || !mode) return res.status(400).json({ error: 'Key e mode obrigatorios' });
+  const agent = agents.get(key);
+  if (!agent || !agent.online) return res.status(400).json({ error: 'Agent offline' });
+
+  const m = HS_MODES[mode];
+  if (!m) return res.status(400).json({ error: 'Modo invalido' });
+
+  const g = game === 'max' ? 'max' : 'normal';
+  const target = hsTarget(g);
+  const pkg = g === 'max' ? 'com.dts.freefiremax' : 'com.dts.freefireth';
+  const logs = [];
+
+  try {
+    await agentExec(key, 'mkdir -p ' + JSON.stringify(target), 10000);
+    logs.push('Diretorio criado');
+
+    for (const f of m.files) {
+      const local = path.join(HS_ROOT, mode, f);
+      if (!fs.existsSync(local)) throw new Error('Arquivo nao encontrado: ' + f);
+      const data = fs.readFileSync(local);
+      const b64 = data.toString('base64');
+      const tmpB64 = '/data/local/tmp/.kabe_hs.b64';
+      const tmpBin = '/data/local/tmp/.kabe_hs.bin';
+
+      await agentExec(key, 'rm -f ' + JSON.stringify(tmpB64) + ' ' + JSON.stringify(tmpBin), 5000);
+      await agentExec(key, 'touch ' + JSON.stringify(f + ' at ' + target) + ' && chmod 666 ' + JSON.stringify(target + f), 5000);
+
+      const chunkSize = 20000;
+      for (let i = 0; i < b64.length; i += chunkSize) {
+        const chunk = b64.slice(i, i + chunkSize);
+        await agentExec(key, 'echo -n ' + JSON.stringify(chunk) + ' >> ' + JSON.stringify(tmpB64), 10000);
+      }
+      logs.push('Base64 enviado (' + b64.length + ' chars)');
+
+      const r = await agentExec(key,
+        'base64 -d ' + JSON.stringify(tmpB64) + ' > ' + JSON.stringify(tmpBin) + ' && ' +
+        'cp -f ' + JSON.stringify(tmpBin) + ' ' + JSON.stringify(target + f) + ' && ' +
+        'rm -f ' + JSON.stringify(tmpB64) + ' ' + JSON.stringify(tmpBin) + ' && ' +
+        'chmod 666 ' + JSON.stringify(target + f),
+        15000
+      );
+      logs.push('Arquivo injetado: ' + f);
+    }
+
+    await agentExec(key, 'am force-stop ' + pkg, 5000);
+    logs.push('Jogo encerrado');
+    res.json({ ok: true, logs });
+  } catch (e) {
+    logs.push('ERRO: ' + e.message);
+    res.json({ ok: false, error: e.message, logs });
+  }
+});
+
+// ── Agent: Holograma Patch ──
+app.post('/api/agent/holo-patch', async (req, res) => {
+  const { key, game, mode } = req.body;
+  if (!key) return res.status(400).json({ error: 'Key obrigatoria' });
+  const agent = agents.get(key);
+  if (!agent || !agent.online) return res.status(400).json({ error: 'Agent offline' });
+
+  const g = game === 'max' ? 'max' : 'normal';
+  const pkg = g === 'max' ? 'com.dts.freefiremax' : 'com.dts.freefireth';
+  const logs = [];
+
+  try {
+    // Upload script
+    logs.push('Enviando script...');
+    const scriptData = fs.readFileSync(HOLO_SCRIPT);
+    const b64 = scriptData.toString('base64');
+    const remoteScript = '/data/local/tmp/kabe_holo.sh';
+    const tmpB64 = '/data/local/tmp/.kabe_holo.b64';
+
+    await agentExec(key, 'rm -f ' + JSON.stringify(tmpB64) + ' ' + JSON.stringify(remoteScript), 5000);
+
+    const chunkSize = 20000;
+    for (let i = 0; i < b64.length; i += chunkSize) {
+      const chunk = b64.slice(i, i + chunkSize);
+      await agentExec(key, 'echo -n ' + JSON.stringify(chunk) + ' >> ' + JSON.stringify(tmpB64), 10000);
+    }
+
+    await agentExec(key,
+      'base64 -d ' + JSON.stringify(tmpB64) + ' > ' + JSON.stringify(remoteScript) + ' && ' +
+      'chmod 777 ' + JSON.stringify(remoteScript) + ' && ' +
+      'rm -f ' + JSON.stringify(tmpB64),
+      10000
+    );
+    logs.push('Script enviado');
+
+    // Executar choice
+    const m = parseInt(mode, 10) === 2 ? 2 : 1;
+    const isRestore = parseInt(mode, 10) === 3;
+    let choice;
+    if (g === 'max') {
+      choice = isRestore ? 3 : (m === 1 ? 1 : 2);
+    } else {
+      choice = isRestore ? 6 : (m === 1 ? 4 : 5);
+    }
+
+    logs.push('Executando choice ' + choice + '...');
+    const r = await agentExec(key, 'sh ' + JSON.stringify(remoteScript) + ' ' + choice, 30000);
+    if (r.output) {
+      r.output.split(/\r?\n/).forEach(ln => { if (ln.trim()) logs.push(ln.trim()); });
+    }
+
+    await agentExec(key, 'am force-stop ' + pkg, 5000);
+    logs.push('Jogo encerrado');
+    res.json({ ok: true, logs });
+  } catch (e) {
+    logs.push('ERRO: ' + e.message);
+    res.json({ ok: false, error: e.message, logs });
+  }
+});
+
+// ── Agent: Holograma Restore ──
+app.post('/api/agent/holo-restore', async (req, res) => {
+  req.body.mode = '3';
+  // reutiliza o holo-patch com mode=3 (restore)
+  const origJson = app._router.stack;
+  // Simples: delega ao holo-patch com mode 3
+  req.body.mode = '3';
+  try {
+    const { key, game } = req.body;
+    const fakeReq = { body: { key, game, mode: '3' } };
+    // Chama diretamente
+    const g = game === 'max' ? 'max' : 'normal';
+    const pkg = g === 'max' ? 'com.dts.freefiremax' : 'com.dts.freefireth';
+    const agent2 = agents.get(key);
+    if (!agent2 || !agent2.online) return res.status(400).json({ error: 'Agent offline' });
+    const logs = [];
+
+    const scriptData = fs.readFileSync(HOLO_SCRIPT);
+    const b64 = scriptData.toString('base64');
+    const remoteScript = '/data/local/tmp/kabe_holo.sh';
+    const tmpB64 = '/data/local/tmp/.kabe_holo.b64';
+
+    await agentExec(key, 'rm -f ' + JSON.stringify(tmpB64) + ' ' + JSON.stringify(remoteScript), 5000);
+    const chunkSize = 20000;
+    for (let i = 0; i < b64.length; i += chunkSize) {
+      await agentExec(key, 'echo -n ' + JSON.stringify(b64.slice(i, i + chunkSize)) + ' >> ' + JSON.stringify(tmpB64), 10000);
+    }
+    await agentExec(key,
+      'base64 -d ' + JSON.stringify(tmpB64) + ' > ' + JSON.stringify(remoteScript) + ' && ' +
+      'chmod 777 ' + JSON.stringify(remoteScript) + ' && rm -f ' + JSON.stringify(tmpB64),
+      10000
+    );
+    logs.push('Script enviado');
+
+    const choice = g === 'max' ? 3 : 6;
+    logs.push('Restaurando choice ' + choice + '...');
+    const r = await agentExec(key, 'sh ' + JSON.stringify(remoteScript) + ' ' + choice, 30000);
+    if (r.output) r.output.split(/\r?\n/).forEach(ln => { if (ln.trim()) logs.push(ln.trim()); });
+
+    await agentExec(key, 'am force-stop ' + pkg, 5000);
+    logs.push('Jogo encerrado');
+    res.json({ ok: true, logs });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
+});
+
 // ── Estado SSH ───────────────────────────────────────────
 let ssh = null;               // conexão ssh2 atual
 let rootMethod = null;        // null | 'direct' | 'su'
