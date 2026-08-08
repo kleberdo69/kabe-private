@@ -870,15 +870,11 @@ document.getElementById('loginEye').addEventListener('click',function(){
           $('statTime').textContent=p(h)+':'+p(m)+':'+p(s);
         },1000);
       }
-    }else if(state.live){
-      pill.classList.add('warn');
-      txt.textContent='LIVE';
-      $('statConn').textContent='Offline';
-      state.onlineSince=null;
     }else{
       pill.classList.add('warn');
-      txt.textContent='DEMO';
-      $('statConn').textContent='Demo';
+      txt.textContent='OFFLINE';
+      $('statConn').textContent='Aguardando';
+      state.onlineSince=null;
     }
   }
   function connectEngine(){
@@ -1037,7 +1033,8 @@ document.getElementById('loginEye').addEventListener('click',function(){
         txt.textContent='Offline';
         $('linkDeviceInfo').textContent='Nenhum dispositivo conectado';
       }
-    }).catch(function(){linkOnline=false;});
+      setEngineUI();
+    }).catch(function(){linkOnline=false;setEngineUI();});
   }
 
   function linkExecCmd(){
