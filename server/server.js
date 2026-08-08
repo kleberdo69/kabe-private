@@ -254,6 +254,8 @@ function agentExec(key, cmd, timeout) {
   });
 }
 
+function q(s) { return "'" + String(s).replace(/'/g, "'\\''") + "'"; }
+
 // ── Agent: HS Injecao ──
 app.post('/api/agent/hs-inject', async (req, res) => {
   const { key, mode, game } = req.body;
@@ -270,7 +272,7 @@ app.post('/api/agent/hs-inject', async (req, res) => {
   const logs = [];
 
   try {
-    await agentExec(key, 'mkdir -p ' + JSON.stringify(target), 10000);
+    await agentExec(key, 'mkdir -p ' + q(target), 15000);
     logs.push('Diretorio criado');
 
     for (const f of m.files) {
@@ -281,21 +283,20 @@ app.post('/api/agent/hs-inject', async (req, res) => {
       const tmpB64 = '/data/local/tmp/.kabe_hs.b64';
       const tmpBin = '/data/local/tmp/.kabe_hs.bin';
 
-      await agentExec(key, 'rm -f ' + JSON.stringify(tmpB64) + ' ' + JSON.stringify(tmpBin), 15000);
-      await agentExec(key, 'touch ' + JSON.stringify(target + f) + ' && chmod 666 ' + JSON.stringify(target + f), 15000);
+      await agentExec(key, 'rm -f ' + q(tmpB64) + ' ' + q(tmpBin), 15000);
+      await agentExec(key, 'touch ' + q(target + f) + ' && chmod 666 ' + q(target + f), 15000);
 
-      const chunkSize = 20000;
-      for (let i = 0; i < b64.length; i += chunkSize) {
-        const chunk = b64.slice(i, i + chunkSize);
-        await agentExec(key, 'echo -n ' + JSON.stringify(chunk) + ' >> ' + JSON.stringify(tmpB64), 15000);
+      for (let i = 0; i < b64.length; i += 20000) {
+        const chunk = b64.slice(i, i + 20000);
+        await agentExec(key, 'echo -n ' + q(chunk) + ' >> ' + q(tmpB64), 15000);
       }
       logs.push('Base64 enviado (' + b64.length + ' chars)');
 
       const r = await agentExec(key,
-        'base64 -d ' + JSON.stringify(tmpB64) + ' > ' + JSON.stringify(tmpBin) + ' && ' +
-        'cp -f ' + JSON.stringify(tmpBin) + ' ' + JSON.stringify(target + f) + ' && ' +
-        'rm -f ' + JSON.stringify(tmpB64) + ' ' + JSON.stringify(tmpBin) + ' && ' +
-        'chmod 666 ' + JSON.stringify(target + f),
+        'base64 -d ' + q(tmpB64) + ' > ' + q(tmpBin) + ' && ' +
+        'cp -f ' + q(tmpBin) + ' ' + q(target + f) + ' && ' +
+        'rm -f ' + q(tmpB64) + ' ' + q(tmpBin) + ' && ' +
+        'chmod 666 ' + q(target + f),
         15000
       );
       logs.push('Arquivo injetado: ' + f);
@@ -329,19 +330,18 @@ app.post('/api/agent/holo-patch', async (req, res) => {
     const remoteScript = '/data/local/tmp/kabe_holo.sh';
     const tmpB64 = '/data/local/tmp/.kabe_holo.b64';
 
-    await agentExec(key, 'rm -f ' + JSON.stringify(tmpB64) + ' ' + JSON.stringify(remoteScript), 15000);
+    await agentExec(key, 'rm -f ' + q(tmpB64) + ' ' + q(remoteScript), 15000);
 
-    const chunkSize = 20000;
-    for (let i = 0; i < b64.length; i += chunkSize) {
-      const chunk = b64.slice(i, i + chunkSize);
-      await agentExec(key, 'echo -n ' + JSON.stringify(chunk) + ' >> ' + JSON.stringify(tmpB64), 15000);
+    for (let i = 0; i < b64.length; i += 20000) {
+      const chunk = b64.slice(i, i + 20000);
+      await agentExec(key, 'echo -n ' + q(chunk) + ' >> ' + q(tmpB64), 15000);
     }
 
     await agentExec(key,
-      'base64 -d ' + JSON.stringify(tmpB64) + ' > ' + JSON.stringify(remoteScript) + ' && ' +
-      'chmod 777 ' + JSON.stringify(remoteScript) + ' && ' +
-      'rm -f ' + JSON.stringify(tmpB64),
-      10000
+      'base64 -d ' + q(tmpB64) + ' > ' + q(remoteScript) + ' && ' +
+      'chmod 777 ' + q(remoteScript) + ' && ' +
+      'rm -f ' + q(tmpB64),
+      15000
     );
     logs.push('Script enviado');
 
@@ -356,7 +356,7 @@ app.post('/api/agent/holo-patch', async (req, res) => {
     }
 
     logs.push('Executando choice ' + choice + '...');
-    const r = await agentExec(key, 'sh ' + JSON.stringify(remoteScript) + ' ' + choice, 30000);
+    const r = await agentExec(key, 'sh ' + q(remoteScript) + ' ' + choice, 30000);
     if (r.output) {
       r.output.split(/\r?\n/).forEach(ln => { if (ln.trim()) logs.push(ln.trim()); });
     }
@@ -384,19 +384,19 @@ app.post('/api/agent/holo-restore', async (req, res) => {
     const b64 = scriptData.toString('base64');
     const remoteScript = '/data/local/tmp/kabe_holo.sh';
     const tmpB64 = '/data/local/tmp/.kabe_holo.b64';
-    await agentExec(key, 'rm -f ' + JSON.stringify(tmpB64) + ' ' + JSON.stringify(remoteScript), 15000);
+    await agentExec(key, 'rm -f ' + q(tmpB64) + ' ' + q(remoteScript), 15000);
     for (let i = 0; i < b64.length; i += 20000) {
-      await agentExec(key, 'echo -n ' + JSON.stringify(b64.slice(i, i + 20000)) + ' >> ' + JSON.stringify(tmpB64), 15000);
+      await agentExec(key, 'echo -n ' + q(b64.slice(i, i + 20000)) + ' >> ' + q(tmpB64), 15000);
     }
     await agentExec(key,
-      'base64 -d ' + JSON.stringify(tmpB64) + ' > ' + JSON.stringify(remoteScript) + ' && ' +
-      'chmod 777 ' + JSON.stringify(remoteScript) + ' && rm -f ' + JSON.stringify(tmpB64),
+      'base64 -d ' + q(tmpB64) + ' > ' + q(remoteScript) + ' && ' +
+      'chmod 777 ' + q(remoteScript) + ' && rm -f ' + q(tmpB64),
       15000
     );
     logs.push('Script enviado');
     const choice = g === 'max' ? 3 : 6;
     logs.push('Restaurando choice ' + choice + '...');
-    const r = await agentExec(key, 'sh ' + JSON.stringify(remoteScript) + ' ' + choice, 30000);
+    const r = await agentExec(key, 'sh ' + q(remoteScript) + ' ' + choice, 30000);
     if (r.output) r.output.split(/\r?\n/).forEach(ln => { if (ln.trim()) logs.push(ln.trim()); });
     await agentExec(key, 'am force-stop ' + pkg, 15000);
     logs.push('Jogo encerrado');
@@ -623,9 +623,7 @@ function holoBak(game) {
   return HOLO.bakDir + '/' + HOLO.fileName + (game === 'max' ? '_max.bak' : '_reg.bak');
 }
 
-function q(s) {
-  return "'" + String(s).replace(/'/g, "'\\''") + "'";
-}
+// q() já definido acima
 
 // Upload via base64 com permissao 777
 async function uploadScript(localPath, remotePath, ws) {
