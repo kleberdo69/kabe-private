@@ -1078,36 +1078,23 @@ document.getElementById('loginEye').addEventListener('click',function(){
   $('agentConnectBtn').addEventListener('click',function(){
     var key=$('agentKey').value.trim().toUpperCase();
     if(!key){log($('agentLog'),'Cole a key do agent','err');return;}
-    var agentServer=$('agentServer').value.trim();
-    if(!agentServer){log($('agentLog'),'Configure o servidor do agent','err');return;}
     saveAgentKey();
-    log($('agentLog'),'Verificando agent no servidor...');
+    log($('agentLog'),'Verificando agent no Firebase...');
     $('agentConnectBtn').disabled=true;$('agentConnectBtn').textContent='Conectando...';
 
-    // Query agent server directly (not local server.js)
-    fetch(agentServer+'/api/agent/list').then(function(r){return r.json();}).then(function(list){
-      var found=null;
-      for(var i=0;i<list.length;i++){
-        if(list[i].key===key&&list[i].online){found=list[i];break;}
-      }
-      if(!found){
-        // Check if at least registered
-        var registered=false;
-        for(var i=0;i<list.length;i++){
-          if(list[i].key===key){registered=true;break;}
-        }
-        if(registered){
-          log($('agentLog'),'Agent registrado mas offline. Aguarde 5s...');
-        }else{
-          log($('agentLog'),'Agent nao encontrado. Instale o modulo no celular.');
-        }
+    // Query Firebase directly
+    var fbUrl='https://khkh-38cba-default-rtdb.firebaseio.com/kabe/'+key+'.json';
+    fetch(fbUrl).then(function(r){return r.json();}).then(function(data){
+      if(!data||!data.online){
+        log($('agentLog'),'Agent offline ou nao encontrado. Instale o modulo no celular.');
         $('agentConnectBtn').disabled=false;$('agentConnectBtn').textContent='Conectar Agent';
         return;
       }
-      // Connect via WebSocket using agent key + server
-      state.agentServer=agentServer;
-      send({type:'agent_connect',data:{key:key,server:agentServer}});
-      log($('agentLog'),'Agent encontrado ('+found.id+'). Conectando...','ok');
+      // Agent online - connect via WebSocket to local server.js
+      state.agentKey=key;
+      state.agentServer='firebase';
+      send({type:'agent_connect',data:{key:key,server:'firebase'}});
+      log($('agentLog'),'Agent online ('+data.device+'). Conectando...','ok');
     }).catch(function(e){
       log($('agentLog'),'Erro ao verificar: '+e.message,'err');
       $('agentConnectBtn').disabled=false;$('agentConnectBtn').textContent='Conectar Agent';

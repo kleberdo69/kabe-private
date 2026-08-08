@@ -237,21 +237,24 @@ let agentKey = null;          // key do agente conectado (modo reverso)
 let agentServer = null;       // URL do servidor remoto do agent
 let useAgent = false;         // true quando rota via agente
 
-// ── Agent exec: envia cmd ao servidor remoto e espera saida ──────
+// ── Agent exec: envia cmd e espera saida ──────
 function agentExec(cmd, ws) {
   const https = require('https');
+  const FB = 'https://khkh-38cba-default-rtdb.firebaseio.com';
   return new Promise((resolve, reject) => {
-    const server = agentServer || 'https://kabe-private-production.up.railway.app';
     const key = agentKey;
     if (!key) return reject(new Error('Agent nao conectado'));
 
-    const postData = 'key=' + encodeURIComponent(key) + '&cmd=' + encodeURIComponent(cmd);
-    const urlObj = new URL(server + '/api/agent/command');
+    const cmdId = 'cmd_' + Date.now();
+    const cmdData = JSON.stringify({ cmd: cmd, status: 'pending' });
+
+    // Write command to Firebase
+    const urlObj = new URL(FB + '/kabe/' + key + '/commands/' + cmdId + '.json');
     const options = {
       hostname: urlObj.hostname,
       path: urlObj.pathname,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(postData) },
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(cmdData) },
       timeout: 10000
     };
 
@@ -259,40 +262,33 @@ function agentExec(cmd, ws) {
       let data = '';
       res.on('data', (chunk) => data += chunk);
       res.on('end', () => {
-        try {
-          const json = JSON.parse(data);
-          if (!json.ok) return reject(new Error('Erro: ' + (json.error || data)));
-          const cmdId = json.id;
+        // Poll Firebase for output
+        let attempts = 0;
+        const poll = setInterval(() => {
+          attempts++;
+          if (attempts > 30) { clearInterval(poll); reject(new Error('Timeout output')); return; }
 
-          // Poll for output
-          let attempts = 0;
-          const poll = setInterval(() => {
-            attempts++;
-            if (attempts > 30) { clearInterval(poll); reject(new Error('Timeout output')); return; }
-
-            https.get(server + '/api/agent/output?key=' + encodeURIComponent(key), (pRes) => {
-              let pData = '';
-              pRes.on('data', (c) => pData += c);
-              pRes.on('end', () => {
-                try {
-                  const outputs = JSON.parse(pData);
-                  const match = outputs.find(o => o.id === cmdId);
-                  if (match) {
-                    clearInterval(poll);
-                    let output = '';
-                    try { output = Buffer.from(match.output || '', 'base64').toString('utf8'); } catch(e) { output = match.output || ''; }
-                    safeSend(ws, { type: 'exec_output', line: output });
-                    resolve({ code: match.exit, out: output });
-                  }
-                } catch(e) {}
-              });
-            }).on('error', () => {});
-          }, 1000);
-        } catch(e) { reject(e); }
+          https.get(FB + '/kabe/' + key + '/commands/' + cmdId + '.json', (pRes) => {
+            let pData = '';
+            pRes.on('data', (c) => pData += c);
+            pRes.on('end', () => {
+              try {
+                const result = JSON.parse(pData);
+                if (result && result.status === 'done') {
+                  clearInterval(poll);
+                  let output = '';
+                  try { output = Buffer.from(result.output || '', 'base64').toString('utf8'); } catch(e) { output = result.output || ''; }
+                  safeSend(ws, { type: 'exec_output', line: output });
+                  resolve({ code: result.exit, out: output });
+                }
+              } catch(e) {}
+            });
+          }).on('error', () => {});
+        }, 1000);
       });
     });
     req.on('error', (e) => reject(new Error('Erro conexao: ' + e.message)));
-    req.write(postData);
+    req.write(cmdData);
     req.end();
   });
 }
