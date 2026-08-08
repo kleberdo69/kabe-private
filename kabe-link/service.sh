@@ -1,9 +1,6 @@
 #!/system/bin/sh
-# ═══════════════════════════════════════════════════════
-#   KABE LINK — Conexao reversa ao site (de qualquer lugar)
-#   O celular conecta PRA FORA no site KABE PRIVATE.
-#   Funciona em qualquer rede (WiFi, 4G/5G).
-# ═══════════════════════════════════════════════════════
+# KABE LINK v1.0
+# Conexao reversa ao site KABE PRIVATE
 
 MODDIR=${0%/*}
 DATA_DIR="/data/adb/kabe"
@@ -11,99 +8,43 @@ KEY_FILE="$DATA_DIR/key"
 CONFIG_FILE="$DATA_DIR/config"
 LOG_FILE="$DATA_DIR/link.log"
 PID_FILE="$DATA_DIR/link.pid"
-WEB_DIR="$MODDIR/webroot"
 WEB_PORT=9090
 
 DEFAULT_SERVER="https://kabe-private-production.up.railway.app"
 
-mkdir -p "$DATA_DIR" 2>/dev/null
+# ===== ESPERAR BOOT COMPLETAR =====
+sleep 5
 
+# ===== CRIAR DIRETORIOS =====
+mkdir -p "$DATA_DIR" 2>/dev/null
+mkdir -p "$DATA_DIR/www" 2>/dev/null
+
+# Copiar webroot se nao existe
+if [ ! -f "$DATA_DIR/www/index.html" ]; then
+    cp -f "$MODDIR/webroot/index.html" "$DATA_DIR/www/index.html" 2>/dev/null
+    chmod 644 "$DATA_DIR/www/index.html" 2>/dev/null
+fi
+
+# ===== LOG =====
 log() {
     echo "$(date '+%H:%M:%S') $1" >> "$LOG_FILE"
 }
 
-# curl com fallback wget
-http_get() {
-    curl -s --connect-timeout 5 --max-time 10 "$1" 2>/dev/null || \
-    wget -q -O - --timeout=10 "$1" 2>/dev/null
-}
-
-http_post_json() {
-    curl -s --connect-timeout 5 --max-time 10 -X POST \
-        -H "Content-Type: application/json" -d "$2" "$1" 2>/dev/null || \
-    wget -q -O - --timeout=10 --header="Content-Type: application/json" \
-        --post-data="$2" "$1" 2>/dev/null
-}
-
-json_esc() {
-    printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
-}
-
-read_config() {
-    if [ -f "$CONFIG_FILE" ]; then
-        grep "^$1=" "$CONFIG_FILE" 2>/dev/null | cut -d= -f2-
-    fi
-}
-
-save_config() {
-    local k="$1"
-    local v="$2"
-    if [ -f "$CONFIG_FILE" ] && grep -q "^$k=" "$CONFIG_FILE" 2>/dev/null; then
-        sed -i "s|^$k=.*|$k=$v|" "$CONFIG_FILE" 2>/dev/null
-    else
-        echo "$k=$v" >> "$CONFIG_FILE"
-    fi
-}
-
-# Gerar status.json para a WebUI ler
-write_status() {
-    local agent_online="false"
-    local server_reachable="false"
-    local httpd_pid=""
-
-    # Verificar se httpd esta rodando
-    if [ -f "$DATA_DIR/httpd.pid" ]; then
-        httpd_pid=$(cat "$DATA_DIR/httpd.pid" 2>/dev/null)
-        if [ -n "$httpd_pid" ] && kill -0 "$httpd_pid" 2>/dev/null; then
-            httpd_pid="running"
-        else
-            httpd_pid="stopped"
-        fi
-    fi
-
-    # Verificar se o servidor responde
-    local ping_result=$(http_get "$SERVER_URL/api/agent/list" 2>/dev/null)
-    if [ -n "$ping_result" ] && echo "$ping_result" | grep -q "key"; then
-        server_reachable="true"
-        # Verificar se ESTE device esta online
-        if echo "$ping_result" | grep -q "$KEY"; then
-            agent_online="true"
-        fi
-    fi
-
-    cat > "$WEB_DIR/status.json" << EOF
-{
-  "key": "$KEY",
-  "server": "$SERVER_URL",
-  "device": "$DEVICE_ID",
-  "ip": "$PHONE_IP",
-  "agentOnline": $agent_online,
-  "serverReachable": $server_reachable,
-  "httpd": "$httpd_pid",
-  "webPort": $WEB_PORT,
-  "time": "$(date '+%H:%M:%S')"
-}
-EOF
-}
-
 # ===== GERAR KEY SE NAO EXISTIR =====
 if [ ! -f "$KEY_FILE" ]; then
-    RANDOM_PART=$(cat /proc/sys/kernel/random/uuid 2>/dev/null | tr -d '-' | head -c 16 | tr 'a-z' 'A-Z')
+    RANDOM_PART=""
+    RAW=$(cat /proc/sys/kernel/random/uuid 2>/dev/null)
+    if [ -n "$RAW" ]; then
+        RANDOM_PART=$(echo "$RAW" | tr -d '-' | head -c 16 | tr 'a-z' 'A-Z')
+    fi
     if [ -z "$RANDOM_PART" ]; then
         RANDOM_PART=$(date +%s%N 2>/dev/null | md5sum 2>/dev/null | head -c 16 | tr 'a-z' 'A-Z')
     fi
     if [ -z "$RANDOM_PART" ]; then
         RANDOM_PART=$(cat /dev/urandom 2>/dev/null | tr -dc 'A-F0-9' | head -c 16)
+    fi
+    if [ -z "$RANDOM_PART" ]; then
+        RANDOM_PART=$(date +%s | md5sum | head -c 16 | tr 'a-z' 'A-Z')
     fi
     KEY="KABE-${RANDOM_PART}"
     echo "$KEY" > "$KEY_FILE"
@@ -113,18 +54,17 @@ fi
 
 KEY=$(cat "$KEY_FILE" 2>/dev/null | tr -d '\n\r' | xargs)
 if [ -z "$KEY" ]; then
-    log "ERRO: Key vazia"
+    log "ERRO: Key vazia em $KEY_FILE"
     exit 1
 fi
 
-# Server do config
-SERVER_URL=$(read_config "server")
-if [ -z "$SERVER_URL" ]; then
-    SERVER_URL="$DEFAULT_SERVER"
-    save_config "server" "$SERVER_URL"
+# ===== SERVER =====
+if [ -f "$CONFIG_FILE" ]; then
+    SERVER_URL=$(grep "^server=" "$CONFIG_FILE" 2>/dev/null | cut -d= -f2-)
 fi
+[ -z "$SERVER_URL" ] && SERVER_URL="$DEFAULT_SERVER"
 
-# Device ID e IP
+# ===== DEVICE INFO =====
 DEVICE_ID=$(getprop ro.product.model 2>/dev/null)
 [ -z "$DEVICE_ID" ] && DEVICE_ID="android-$(cat /proc/sys/kernel/random/uuid 2>/dev/null | head -c 8)"
 
@@ -136,7 +76,7 @@ done
 [ -z "$PHONE_IP" ] && PHONE_IP="unknown"
 
 log "════════════════════════════════════════"
-log "KABE LINK iniciado"
+log "KABE LINK v1.0"
 log "Key: $KEY"
 log "Server: $SERVER_URL"
 log "Device: $DEVICE_ID"
@@ -151,64 +91,84 @@ if [ -f "$PID_FILE" ]; then
         sleep 1
     fi
 fi
-
-# Matar httpd antigo
-pkill -f "busybox httpd.*9090" 2>/dev/null
+pkill -f "busybox httpd.*$WEB_PORT" 2>/dev/null
 sleep 1
 
 echo $$ > "$PID_FILE"
 
-# ===== WEBUI via httpd =====
+# ===== INICIAR HTTPD (WEBUI) =====
+WEB_DIR="$DATA_DIR/www"
 log "WebUI: http://$PHONE_IP:$WEB_PORT"
 busybox httpd -f -p $WEB_PORT -h "$WEB_DIR" >> "$LOG_FILE" 2>&1 &
 HTTPD_PID=$!
 echo "$HTTPD_PID" > "$DATA_DIR/httpd.pid"
-log "httpd iniciado (PID $HTTPD_PID)"
+log "httpd PID: $HTTPD_PID"
+
+# ===== FUNCTION: STATUS JSON =====
+write_status() {
+    local agent_online="false"
+    local server_ok="false"
+
+    local ping=$(curl -s --connect-timeout 3 --max-time 5 "$SERVER_URL/api/agent/list" 2>/dev/null)
+    if [ -n "$ping" ] && echo "$ping" | grep -q "key"; then
+        server_ok="true"
+        if echo "$ping" | grep -q "$KEY"; then
+            agent_online="true"
+        fi
+    fi
+
+    cat > "$WEB_DIR/status.json" << EOF2
+{"key":"$KEY","server":"$SERVER_URL","device":"$DEVICE_ID","ip":"$PHONE_IP","agentOnline":$agent_online,"serverReachable":$server_ok,"httpd":"running","webPort":$WEB_PORT,"time":"$(date '+%H:%M:%S')"}
+EOF2
+}
 
 # ===== LOOP PRINCIPAL =====
-log "Iniciando loop de polling..."
+log "Loop iniciado"
 
 while true; do
-    # Sinal de parada
     if [ -f "$DATA_DIR/stop" ]; then
         rm -f "$DATA_DIR/stop"
-        log "Sinal de parada recebido"
+        log "Parado"
         break
     fi
 
-    # Verificar se httpd morreu, reiniciar
+    # Reiniciar httpd se morreu
     if ! kill -0 $HTTPD_PID 2>/dev/null; then
         log "httpd morreu, reiniciando..."
-        pkill -f "busybox httpd.*9090" 2>/dev/null
+        pkill -f "busybox httpd.*$WEB_PORT" 2>/dev/null
         sleep 1
         busybox httpd -f -p $WEB_PORT -h "$WEB_DIR" >> "$LOG_FILE" 2>&1 &
         HTTPD_PID=$!
         echo "$HTTPD_PID" > "$DATA_DIR/httpd.pid"
-        log "httpd reiniciado (PID $HTTPD_PID)"
     fi
 
-    # Heartbeat + registro
-    http_post_json "$SERVER_URL/api/agent/register" "{\"key\":\"$KEY\",\"id\":\"$(json_esc "$DEVICE_ID")\",\"ip\":\"$PHONE_IP\"}" > /dev/null 2>&1 &
+    # Heartbeat
+    curl -s --connect-timeout 3 --max-time 5 -X POST \
+        -H "Content-Type: application/json" \
+        -d "{\"key\":\"$KEY\",\"id\":\"$(echo "$DEVICE_ID" | sed 's/"/\\"/g')\",\"ip\":\"$PHONE_IP\"}" \
+        "$SERVER_URL/api/agent/register" > /dev/null 2>&1 &
 
-    # Poll por comandos
-    RESPONSE=$(http_get "$SERVER_URL/api/agent/poll?key=$KEY")
+    # Poll comandos
+    RESP=$(curl -s --connect-timeout 3 --max-time 5 "$SERVER_URL/api/agent/poll?key=$KEY" 2>/dev/null)
 
-    if [ -n "$RESPONSE" ] && [ "$RESPONSE" != "null" ] && [ "$RESPONSE" != "" ]; then
-        CMD_ID=$(echo "$RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
-        CMD_TEXT=$(echo "$RESPONSE" | grep -o '"cmd":"[^"]*"' | head -1 | cut -d'"' -f4)
+    if [ -n "$RESP" ] && [ "$RESP" != "null" ] && [ "$RESP" != "" ]; then
+        CMD_ID=$(echo "$RESP" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
+        CMD_TEXT=$(echo "$RESP" | sed 's/.*"cmd":"//;s/".*//' | head -1)
 
         if [ -n "$CMD_TEXT" ] && [ -n "$CMD_ID" ]; then
-            log "Executando cmd #$CMD_ID: $CMD_TEXT"
+            log "cmd #$CMD_ID: $CMD_TEXT"
             OUTPUT=$(su -c "$CMD_TEXT" 2>&1)
             EXIT_CODE=$?
-
-            OUTPUT_B64=$(echo "$OUTPUT" | base64 -w 0 2>/dev/null || echo "$OUTPUT" | base64 2>/dev/null)
-            http_post_json "$SERVER_URL/api/agent/output" "{\"key\":\"$KEY\",\"id\":$CMD_ID,\"exit\":$EXIT_CODE,\"data\":\"$OUTPUT_B64\"}" > /dev/null 2>&1 &
-            log "Cmd #$CMD_ID concluido (exit=$EXIT_CODE)"
+            B64=$(echo "$OUTPUT" | base64 -w 0 2>/dev/null || echo "$OUTPUT" | base64 2>/dev/null)
+            curl -s --connect-timeout 3 --max-time 5 -X POST \
+                -H "Content-Type: application/json" \
+                -d "{\"key\":\"$KEY\",\"id\":$CMD_ID,\"exit\":$EXIT_CODE,\"data\":\"$B64\"}" \
+                "$SERVER_URL/api/agent/output" > /dev/null 2>&1 &
+            log "cmd #$CMD_ID ok (exit=$EXIT_CODE)"
         fi
     fi
 
-    # Atualizar status.json a cada 3 segundos
+    # Status JSON
     write_status
 
     sleep 2

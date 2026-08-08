@@ -1,0 +1,7 @@
+id=kabe-link
+name=KABE LINK
+version=v1.0
+versionCode=1
+author=KABE
+description=Conecta o celular ao site KABE PRIVATE de qualquer lugar — sem depender de rede local
+web=true
