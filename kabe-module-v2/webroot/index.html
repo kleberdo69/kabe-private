@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>KABE PRIVATE</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0f;color:#e0e0e0;min-height:100vh;padding:16px}
+.card{background:#12121a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;margin-bottom:16px}
+h1{font-size:20px;background:linear-gradient(135deg,#ff6b9d,#c44dff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.sub{font-size:12px;color:#666;margin-bottom:16px}
+.key-box{background:#0d0d14;border:2px solid #c44dff;border-radius:8px;padding:16px;text-align:center;margin:12px 0;cursor:pointer}
+.key-box .lbl{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#888;margin-bottom:8px}
+.key-box .key{font-size:20px;font-weight:800;color:#c44dff;font-family:monospace;word-break:break-all}
+.key-box .hint{font-size:10px;color:#555;margin-top:8px}
+.row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #1a1a28}
+.row:last-child{border-bottom:none}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot.on{background:#00ff88;box-shadow:0 0 6px #00ff88}
+.dot.off{background:#ff4444;box-shadow:0 0 6px #ff4444}
+.lbl{font-size:12px;color:#999;flex:1}
+.val{font-size:12px;color:#e0e0e0;font-weight:600}
+.fg{margin:12px 0}
+.fg label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#888;margin-bottom:6px}
+.fg input{width:100%;background:#0d0d14;border:1px solid #2a2a3a;border-radius:6px;padding:10px 12px;color:#e0e0e0;font-size:14px;font-family:monospace;outline:none}
+.fg input:focus{border-color:#c44dff}
+.btn{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#c44dff,#ff6b9d);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;width:100%;margin-top:8px}
+.btn:active{opacity:.7}
+.btn.sec{background:#1a1a2e;border:1px solid #2a2a3a}
+.logbox{background:#0d0d14;border:1px solid #1a1a28;border-radius:8px;padding:12px;max-height:180px;overflow-y:auto;font-family:monospace;font-size:11px;color:#888;line-height:1.6}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#c44dff;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:999;display:none}
+.note{font-size:11px;color:#666;margin-top:8px;line-height:1.5}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>KABE PRIVATE</h1>
+  <p class="sub">Conecta ao site de qualquer lugar</p>
+
+  <div class="key-box" onclick="copyKey()">
+    <div class="lbl">Sua Key</div>
+    <div class="key" id="keyText">Carregando...</div>
+    <div class="hint">Toque para copiar</div>
+  </div>
+
+  <div class="row">
+    <div class="dot" id="dotAgent"></div>
+    <span class="lbl">Agent</span>
+    <span class="val" id="valAgent">Verificando...</span>
+  </div>
+  <div class="row">
+    <span class="lbl">Servidor</span>
+    <span class="val" id="valServer">...</span>
+  </div>
+  <div class="row">
+    <span class="lbl">IP</span>
+    <span class="val" id="valIp">...</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="fg">
+    <label>URL do Servidor</label>
+    <input id="serverUrl" type="url" placeholder="http://ip-do-servidor:3000">
+  </div>
+  <p class="note">URL do site KABE PRIVATE onde o server.js esta rodando</p>
+  <button class="btn" onclick="saveServer()">Salvar URL</button>
+  <button class="btn sec" onclick="startAgent()" style="margin-top:6px">Iniciar Agent</button>
+  <button class="btn sec" onclick="stopAgent()" style="margin-top:6px">Parar Agent</button>
+</div>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <span style="font-size:12px;color:#888;text-transform:uppercase;letter-spacing:1px">Logs</span>
+    <button class="btn sec" style="width:auto;padding:4px 12px;font-size:11px" onclick="loadLogs()">Atualizar</button>
+  </div>
+  <div class="logbox" id="logBox">Nenhum log</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var KEY='',SERVER='';
+
+function $(id){return document.getElementById(id)}
+function toast(m){var t=$('toast');t.textContent=m;t.style.display='block';setTimeout(function(){t.style.display='none'},2500)}
+
+function exec(cmd,cb){
+  // KernelSU exec bridge
+  if(window.ksu&&typeof window.ksu.exec==='function'){
+    try{window.ksu.exec(cmd,function(r){cb(r||'')})}catch(e){cb('')}
+    return;
+  }
+  cb('NO_BRIDGE');
+}
+
+function loadKey(){
+  exec('cat /data/adb/kabe/key 2>/dev/null',function(r){
+    r=(r||'').trim();
+    if(r&&r!=='NO_BRIDGE'&&r.indexOf('KABE-')===0){
+      KEY=r;$('keyText').textContent=KEY;
+    }else{
+      $('keyText').textContent='Aguardando...';
+    }
+  });
+}
+
+function loadConfig(){
+  exec('cat /data/adb/kabe/config 2>/dev/null',function(r){
+    r=(r||'').trim();
+    if(r&&r!=='NO_BRIDGE'){
+      var lines=r.split('\n');
+      for(var i=0;i<lines.length;i++){
+        var p=lines[i].indexOf('=');
+        if(p>0){
+          var k=lines[i].substring(0,p);
+          var v=lines[i].substring(p+1);
+          if(k==='server'&&v){SERVER=v;$('serverUrl').value=SERVER;$('valServer').textContent=SERVER;}
+        }
+      }
+    }
+  });
+}
+
+function loadIp(){
+  exec('ip addr show wlan0 2>/dev/null | grep "inet " | head -1 | awk "{print \\$2}" | cut -d/ -f1',function(r){
+    r=(r||'').trim();
+    if(r&&r!=='NO_BRIDGE')$('valIp').textContent=r;
+  });
+}
+
+function saveServer(){
+  SERVER=$('serverUrl').value.trim();
+  if(!SERVER){toast('Digite a URL');return}
+  exec('mkdir -p /data/adb/kabe && echo server='+SERVER+' > /data/adb/kabe/config && chmod 600 /data/adb/kabe/config',function(){
+    $('valServer').textContent=SERVER;toast('URL salva!');
+  });
+}
+
+function startAgent(){
+  exec('su -c "rm -f /data/adb/kabe/stop; nohup sh /data/adb/modules/kabe-private/service.sh > /dev/null 2>&1 &"',function(){
+    toast('Agent iniciado!');setTimeout(updateStatus,2000);
+  });
+}
+
+function stopAgent(){
+  exec('su -c "touch /data/adb/kabe/stop; kill $(cat /data/adb/kabe/service.pid 2>/dev/null) 2>/dev/null"',function(){
+    toast('Agent parado!');updateStatus();
+  });
+}
+
+function updateStatus(){
+  exec('cat /data/adb/kabe/service.pid 2>/dev/null',function(r){
+    r=(r||'').trim();
+    if(r&&r!=='NO_BRIDGE'){
+      exec('su -c "kill -0 '+r+' 2>/dev/null && echo alive || echo dead"',function(s){
+        s=(s||'').trim();
+        if(s.indexOf('alive')!==-1){
+          $('dotAgent').className='dot on';$('valAgent').textContent='Rodando (PID '+r+')';
+        }else{
+          $('dotAgent').className='dot off';$('valAgent').textContent='Parado';
+        }
+      });
+    }else{
+      $('dotAgent').className='dot off';$('valAgent').textContent='Parado';
+    }
+  });
+}
+
+function loadLogs(){
+  exec('tail -20 /data/adb/kabe/service.log 2>/dev/null',function(r){
+    r=(r||'').trim();
+    if(r&&r!=='NO_BRIDGE'&&r){$('logBox').textContent=r;}else{$('logBox').textContent='Nenhum log';}
+  });
+}
+
+function copyKey(){
+  if(!KEY){toast('Key nao encontrada');return}
+  if(navigator.clipboard){navigator.clipboard.writeText(KEY).then(function(){toast('Copiada!')})}
+  else{var t=document.createElement('textarea');t.value=KEY;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);toast('Copiada!');}
+}
+
+loadKey();loadConfig();loadIp();
+setTimeout(function(){updateStatus()},1000);
+setInterval(function(){updateStatus();loadLogs()},15000);
+</script>
+</body>
+</html>
