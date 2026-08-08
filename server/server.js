@@ -268,13 +268,9 @@ app.post('/api/agent/hs-inject', async (req, res) => {
 
   const g = game === 'max' ? 'max' : 'normal';
   const target = hsTarget(g);
-  const pkg = g === 'max' ? 'com.dts.freefiremax' : 'com.dts.freefireth';
   const logs = [];
 
   try {
-    await agentExec(key, 'mkdir -p ' + q(target), 15000);
-    logs.push('Diretorio criado');
-
     for (const f of m.files) {
       const local = path.join(HS_ROOT, mode, f);
       if (!fs.existsSync(local)) throw new Error('Arquivo nao encontrado: ' + f);
@@ -283,27 +279,26 @@ app.post('/api/agent/hs-inject', async (req, res) => {
       const tmpB64 = '/data/local/tmp/.kabe_hs.b64';
       const tmpBin = '/data/local/tmp/.kabe_hs.bin';
 
-      await agentExec(key, 'rm -f ' + q(tmpB64) + ' ' + q(tmpBin), 15000);
-      await agentExec(key, 'touch ' + q(target + f) + ' && chmod 666 ' + q(target + f), 15000);
+      // Limpar + criar dir + enviar base64 em UM comando so
+      await agentExec(key, 'rm -f ' + q(tmpB64) + ' ' + q(tmpBin) + ' && mkdir -p ' + q(target), 15000);
 
+      // Enviar base64
       for (let i = 0; i < b64.length; i += 20000) {
         const chunk = b64.slice(i, i + 20000);
         await agentExec(key, 'echo -n ' + q(chunk) + ' >> ' + q(tmpB64), 15000);
       }
-      logs.push('Base64 enviado (' + b64.length + ' chars)');
 
+      // Decodificar + copiar + limpar em UM comando so
       const r = await agentExec(key,
         'base64 -d ' + q(tmpB64) + ' > ' + q(tmpBin) + ' && ' +
         'cp -f ' + q(tmpBin) + ' ' + q(target + f) + ' && ' +
-        'rm -f ' + q(tmpB64) + ' ' + q(tmpBin) + ' && ' +
-        'chmod 666 ' + q(target + f),
+        'chmod 666 ' + q(target + f) + ' && ' +
+        'rm -f ' + q(tmpB64) + ' ' + q(tmpBin),
         15000
       );
-      logs.push('Arquivo injetado: ' + f);
+      logs.push(f + ' injetado');
     }
 
-    await agentExec(key, 'am force-stop ' + pkg, 15000);
-    logs.push('Jogo encerrado');
     res.json({ ok: true, logs });
   } catch (e) {
     logs.push('ERRO: ' + e.message);
