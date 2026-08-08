@@ -656,7 +656,7 @@ document.getElementById('loginEye').addEventListener('click',function(){
         <div class="title">KABE PRIVATE</div>
         <div class="sub" id="crumb">Inicio / Visao Geral</div>
       </div>
-      <div class="pill warn" id="enginePill"><i></i><span id="engineText">DEMO</span></div>
+      <div class="pill warn" id="enginePill"><i></i><span id="engineText">AGUARDANDO</span></div>
     </header>
     <div class="content">
 <!--PAGES-->
@@ -878,12 +878,12 @@ document.getElementById('loginEye').addEventListener('click',function(){
     }
   }
   function connectEngine(){
-    if(location.protocol==='file:'){state.live=false;setEngineUI();return;}
+    if(location.protocol==='file:'){return;}
     try{ws=new WebSocket((location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/ws');}
-    catch(e){state.live=false;setEngineUI();return;}
-    ws.onopen=function(){state.live=true;setEngineUI();while(pending.length){try{ws.send(JSON.stringify(pending.shift()));}catch(e){}}};
-    ws.onclose=function(e){state.live=false;setEngineUI();setTimeout(connectEngine,2500);};
-    ws.onerror=function(e){console.log('WS ERROR',e);};
+    catch(e){return;}
+    ws.onopen=function(){state.live=true;while(pending.length){try{ws.send(JSON.stringify(pending.shift()));}catch(e){}}};
+    ws.onclose=function(e){state.live=false;setTimeout(connectEngine,5000);};
+    ws.onerror=function(e){};
     ws.onmessage=function(ev){var msg;try{msg=JSON.parse(ev.data);}catch(e){return;}onMsg(msg);};
   }
   function send(obj){
