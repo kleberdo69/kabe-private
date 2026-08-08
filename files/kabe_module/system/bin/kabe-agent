@@ -1,4 +1,9 @@
 #!/system/bin/sh
+# ═══════════════════════════════════════════════════════
+#   KABE PRIVATE — Agent (conexao reversa)
+#   Conecta o celular ao painel automaticamente
+# ═══════════════════════════════════════════════════════
+
 LOG="/data/local/tmp/kabe.log"
 CONFIG="/data/adb/kabe/config"
 KEY_FILE="/data/adb/kabe/key"
@@ -13,7 +18,7 @@ SERIAL=$(getprop ro.serialno 2>/dev/null || echo "unknown")
 MODEL=$(getprop ro.product.model 2>/dev/null || echo "unknown")
 ANDROID=$(getprop ro.build.version.release 2>/dev/null || echo "unknown")
 [ -z "$SERVER" ] || [ -z "$KEY" ] && { log "Empty SERVER/KEY"; exit 1; }
-log "Starting agent -> $SERVER ($MODEL)"
+log "KABE PRIVATE agent -> $SERVER ($MODEL)"
 wget -q -O /tmp/kabe_reg --post-data="key=$KEY&id=$SERIAL&model=$MODEL&android=$ANDROID" "$SERVER/api/agent/register" 2>/dev/null
 [ $? -ne 0 ] && { log "Cannot reach server"; exit 1; }
 log "Registered"

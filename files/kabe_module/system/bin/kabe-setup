@@ -1,15 +1,24 @@
 #!/system/bin/sh
+# ═══════════════════════════════════════════════════════
+#   KABE PRIVATE — Agent Setup
+#   Configura a conexao reversa com o painel
+# ═══════════════════════════════════════════════════════
+
 KEY_FILE="/data/adb/kabe/key"
 CONFIG_FILE="/data/adb/kabe/config"
 mkdir -p /data/adb/kabe
 chmod 700 /data/adb/kabe
-echo "=== KABE Agent Setup ==="
+
+echo ""
+echo "  ============================================"
+echo "       KABE PRIVATE — CONFIGURACAO"
+echo "  ============================================"
 echo ""
 if [ -f "$CONFIG_FILE" ]; then
     OLD_SERVER=$(grep "^SERVER=" "$CONFIG_FILE" | cut -d= -f2-)
-    echo "Server atual: $OLD_SERVER"
+    echo "  Server atual: $OLD_SERVER"
 fi
-printf "Server URL (ex: http://192.168.0.10:3000): "
+printf "  Server URL (ex: http://192.168.0.10:3000): "
 read SERVER_INPUT
 if [ -n "$SERVER_INPUT" ]; then
     SERVER="$SERVER_INPUT"
@@ -21,9 +30,13 @@ KEY="KABE-$(cat /dev/urandom | tr -dc 'A-Z0-9' | head -c 16)"
 echo "$KEY" > "$KEY_FILE"
 chmod 600 "$KEY_FILE"
 echo ""
-echo "=== Configurado ==="
-echo "Server: $SERVER"
-echo "Key: $KEY"
+echo "  ============================================"
+echo "        KABE PRIVATE — CONFIGURADO"
+echo "  ============================================"
 echo ""
-echo "Cole esta key no painel KABE PRIVATE"
-echo "E aguarde o agent conectar..."
+echo "  Server: $SERVER"
+echo "  Key: $KEY"
+echo ""
+echo "  Cole esta key no painel KABE PRIVATE"
+echo "  e aguarde o agent conectar..."
+echo ""

@@ -1,4 +1,9 @@
-﻿#!/system/bin/sh
+#!/system/bin/sh
+# ═══════════════════════════════════════════════════════
+#   KABE PRIVATE — Web Config
+#   Configura o agent pela rede (porta 9090)
+# ═══════════════════════════════════════════════════════
+
 PORT=9090
 CONFIG="/data/adb/kabe/config"
 KEY_FILE="/data/adb/kabe/key"
@@ -8,13 +13,13 @@ mkdir -p /data/adb/kabe
 log_msg() { echo "[$(date '+%H:%M:%S')] $1" >> $LOG; }
 
 if [ -f "$CONFIG" ] && [ -f "$KEY_FILE" ]; then
-    echo "Configurado. Key: $(cat $KEY_FILE)"
+    echo "KABE PRIVATE ja configurado. Key: $(cat $KEY_FILE)"
     exit 0
 fi
 
-log_msg "Web config na porta $PORT"
+log_msg "KABE PRIVATE web config na porta $PORT"
 
-FORM='<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KABE</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0a0f;color:#f4f4f7;padding:20px}.c{width:100%;max-width:380px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:32px 28px}h1{font-size:24px;margin-bottom:4px;background:linear-gradient(120deg,#ff4444,#ff8888);-webkit-background-clip:text;-webkit-text-fill-color:transparent}.s{color:#9a9aa8;font-size:13px;margin-bottom:24px}input{width:100%;padding:14px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(0,0,0,.5);color:#fff;font-size:15px;margin-bottom:14px;outline:none}input:focus{border-color:#a1121f}.b{width:100%;padding:15px;border:none;border-radius:12px;background:linear-gradient(135deg,#c1121f,#8f0d18);color:#fff;font-size:15px;font-weight:700;cursor:pointer}</style></head><body><div class="c"><h1>KABE Private</h1><p class="s">Configure a conexao</p><form method="POST" action="/save"><input name="server" placeholder="http://192.168.0.10:3000" required><button class="b" type="submit">Salvar</button></form></div></body></html>'
+FORM='<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KABE PRIVATE</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0a0f;color:#f4f4f7;padding:20px}.c{width:100%;max-width:380px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:32px 28px}h1{font-size:24px;margin-bottom:4px;background:linear-gradient(120deg,#ff4444,#ff8888);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center}.s{color:#9a9aa8;font-size:13px;margin-bottom:24px;text-align:center}input{width:100%;padding:14px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(0,0,0,.5);color:#fff;font-size:15px;margin-bottom:14px;outline:none}input:focus{border-color:#a1121f}.b{width:100%;padding:15px;border:none;border-radius:12px;background:linear-gradient(135deg,#c1121f,#8f0d18);color:#fff;font-size:15px;font-weight:700;cursor:pointer}</style></head><body><div class="c"><h1>KABE PRIVATE</h1><p class="s">Configure a conexao reversa</p><form method="POST" action="/save"><input name="server" placeholder="http://192.168.0.10:3000" required><button class="b" type="submit">Salvar</button></form></div></body></html>'
 
 while true; do
     # nc com timeout — lê request e responde
@@ -33,7 +38,7 @@ while true; do
             echo "$KEY" > "$KEY_FILE"
             chmod 600 "$KEY_FILE"
             log_msg "OK: $SERVER / $KEY"
-            RESP="<!DOCTYPE html><html><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>OK</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0a0f;color:#f4f4f7;padding:20px}.c{width:100%;max-width:380px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:32px 28px;text-align:center}h1{color:#4CAF50;font-size:24px;margin-bottom:12px}.k{font-family:monospace;font-size:18px;color:#4CAF50;font-weight:700;padding:16px;background:rgba(45,212,167,.08);border:1px solid rgba(45,212,167,.25);border-radius:12px;word-break:break-all;margin:16px 0}.s{color:#9a9aa8;font-size:13px}</style></head><body><div class='c'><h1>Configurado!</h1><p class='s'>Cole esta key no site KABE</p><div class='k'>$KEY</div><p class='s'>Agent conecta sozinho.</p></div></body></html>"
+            RESP="<!DOCTYPE html><html><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>OK</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0a0f;color:#f4f4f7;padding:20px}.c{width:100%;max-width:380px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:32px 28px;text-align:center}h1{color:#4CAF50;font-size:24px;margin-bottom:12px}.k{font-family:monospace;font-size:18px;color:#4CAF50;font-weight:700;padding:16px;background:rgba(45,212,167,.08);border:1px solid rgba(45,212,167,.25);border-radius:12px;word-break:break-all;margin:16px 0}.s{color:#9a9aa8;font-size:13px}</style></head><body><div class='c'><h1>KABE PRIVATE</h1><p class='s'>Configurado com sucesso!</p><p class='s'>Cole esta key no painel KABE PRIVATE</p><div class='k'>$KEY</div><p class='s'>O agent conecta sozinho.</p></div></body></html>"
         fi
     fi
 

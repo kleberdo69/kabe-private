@@ -1,6 +1,6 @@
 #!/system/bin/sh
 # ═══════════════════════════════════════════════════════
-#   KABE Private Shell Server v1.0
+#   KABE PRIVATE — Root Shell Server
 #   Root shell com autenticacao por key
 # ═══════════════════════════════════════════════════════
 
@@ -16,7 +16,7 @@ log_msg() {
 
 cleanup() {
     rm -f "$FIFO" "$PID_FILE"
-    log_msg "Server stopped"
+    log_msg "KABE PRIVATE server stopped"
     exit 0
 }
 
@@ -44,7 +44,7 @@ rm -f "$FIFO"
 mkfifo "$FIFO"
 
 echo $$ > "$PID_FILE"
-log_msg "Starting shell server on port $PORT (PID: $$)"
+log_msg "Starting KABE PRIVATE shell server on port $PORT (PID: $$)"
 
 while true; do
     nc -l -p $PORT < "$FIFO" | {
