@@ -283,8 +283,8 @@ app.post('/api/agent/hs-inject', async (req, res) => {
       await agentExec(key, 'rm -f ' + q(tmpB64) + ' ' + q(tmpBin) + ' && mkdir -p ' + q(target), 15000);
 
       // Enviar base64
-      for (let i = 0; i < b64.length; i += 20000) {
-        const chunk = b64.slice(i, i + 20000);
+      for (let i = 0; i < b64.length; i += 50000) {
+        const chunk = b64.slice(i, i + 50000);
         await agentExec(key, 'echo -n ' + q(chunk) + ' >> ' + q(tmpB64), 15000);
       }
 
