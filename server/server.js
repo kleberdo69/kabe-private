@@ -282,7 +282,7 @@ app.post('/api/agent/hs-inject', async (req, res) => {
       const tmpBin = '/data/local/tmp/.kabe_hs.bin';
 
       await agentExec(key, 'rm -f ' + JSON.stringify(tmpB64) + ' ' + JSON.stringify(tmpBin), 15000);
-      await agentExec(key, 'touch ' + JSON.stringify(f + ' at ' + target) + ' && chmod 666 ' + JSON.stringify(target + f), 15000);
+      await agentExec(key, 'touch ' + JSON.stringify(target + f) + ' && chmod 666 ' + JSON.stringify(target + f), 15000);
 
       const chunkSize = 20000;
       for (let i = 0; i < b64.length; i += chunkSize) {
@@ -372,30 +372,21 @@ app.post('/api/agent/holo-patch', async (req, res) => {
 
 // ── Agent: Holograma Restore ──
 app.post('/api/agent/holo-restore', async (req, res) => {
-  req.body.mode = '3';
-  // reutiliza o holo-patch com mode=3 (restore)
-  const origJson = app._router.stack;
-  // Simples: delega ao holo-patch com mode 3
-  req.body.mode = '3';
+  const { key, game } = req.body;
+  if (!key) return res.status(400).json({ error: 'Key obrigatoria' });
+  const agent = agents.get(key);
+  if (!agent || !agent.lastSeen || (Date.now() - agent.lastSeen) > 15000) return res.status(400).json({ error: 'Agent offline' });
+  const g = game === 'max' ? 'max' : 'normal';
+  const pkg = g === 'max' ? 'com.dts.freefiremax' : 'com.dts.freefireth';
+  const logs = [];
   try {
-    const { key, game } = req.body;
-    const fakeReq = { body: { key, game, mode: '3' } };
-    // Chama diretamente
-    const g = game === 'max' ? 'max' : 'normal';
-    const pkg = g === 'max' ? 'com.dts.freefiremax' : 'com.dts.freefireth';
-    const agent2 = agents.get(key);
-    if (!agent2 || !agent2.online) return res.status(400).json({ error: 'Agent offline' });
-    const logs = [];
-
     const scriptData = fs.readFileSync(HOLO_SCRIPT);
     const b64 = scriptData.toString('base64');
     const remoteScript = '/data/local/tmp/kabe_holo.sh';
     const tmpB64 = '/data/local/tmp/.kabe_holo.b64';
-
     await agentExec(key, 'rm -f ' + JSON.stringify(tmpB64) + ' ' + JSON.stringify(remoteScript), 15000);
-    const chunkSize = 20000;
-    for (let i = 0; i < b64.length; i += chunkSize) {
-      await agentExec(key, 'echo -n ' + JSON.stringify(b64.slice(i, i + chunkSize)) + ' >> ' + JSON.stringify(tmpB64), 15000);
+    for (let i = 0; i < b64.length; i += 20000) {
+      await agentExec(key, 'echo -n ' + JSON.stringify(b64.slice(i, i + 20000)) + ' >> ' + JSON.stringify(tmpB64), 15000);
     }
     await agentExec(key,
       'base64 -d ' + JSON.stringify(tmpB64) + ' > ' + JSON.stringify(remoteScript) + ' && ' +
@@ -403,17 +394,16 @@ app.post('/api/agent/holo-restore', async (req, res) => {
       15000
     );
     logs.push('Script enviado');
-
     const choice = g === 'max' ? 3 : 6;
     logs.push('Restaurando choice ' + choice + '...');
     const r = await agentExec(key, 'sh ' + JSON.stringify(remoteScript) + ' ' + choice, 30000);
     if (r.output) r.output.split(/\r?\n/).forEach(ln => { if (ln.trim()) logs.push(ln.trim()); });
-
     await agentExec(key, 'am force-stop ' + pkg, 15000);
     logs.push('Jogo encerrado');
     res.json({ ok: true, logs });
   } catch (e) {
-    res.json({ ok: false, error: e.message });
+    logs.push('ERRO: ' + e.message);
+    res.json({ ok: false, error: e.message, logs });
   }
 });
 

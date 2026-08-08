@@ -749,7 +749,7 @@ document.getElementById('loginEye').addEventListener('click',function(){
       <section class="page" id="page-link">
         <div class="head">
           <h2 class="grad-text">Dispositivo</h2>
-          <p>Celular conectado via link — funciona de qualquer lugar</p>
+          <p>Conexao reversa — funciona de qualquer lugar</p>
         </div>
         <div class="card" style="max-width:560px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
@@ -757,51 +757,12 @@ document.getElementById('loginEye').addEventListener('click',function(){
             <div class="badge" id="linkBadge"><i></i><span id="linkBadgeText">Procurando...</span></div>
           </div>
           <div class="field" style="margin:0 0 10px"><label>Key do dispositivo</label><input id="linkKey" placeholder="KABE-XXXXXXXX"></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-            <span style="font-size:12px;color:var(--muted)" id="linkDeviceInfo">...</span>
-          </div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px" id="linkDeviceInfo">...</div>
+          <div class="log" id="linkLog"><div>Aguardando...</div></div>
         </div>
-
-        <div class="card" style="max-width:560px">
-          <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:1.4px;margin-bottom:14px">HS / Injecao</h3>
-          <div class="seg" id="linkHsGame">
-            <button type="button" class="on" data-g="normal">Free Fire</button>
-            <button type="button" data-g="max">Free Fire MAX</button>
-          </div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
-            <button class="btn btn-sm btn-main" onclick="linkHsInject('limpo')" style="width:auto">HS Limpo</button>
-            <button class="btn btn-sm btn-main" onclick="linkHsInject('hsalto')" style="width:auto">HS Alto</button>
-            <button class="btn btn-sm btn-main" onclick="linkHsInject('hsaltoplus')" style="width:auto">HS Alto+</button>
-            <button class="btn btn-sm btn-main" onclick="linkHsInject('hsneck')" style="width:auto">HS Pescoco</button>
-            <button class="btn btn-sm btn-main" onclick="linkHsInject('hspeito')" style="width:auto">HS Peito</button>
-          </div>
-          <div class="log" id="hsLog"><div>Selecione o modo e clique em injetar</div></div>
-        </div>
-
-        <div class="card" style="max-width:560px">
-          <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:1.4px;margin-bottom:14px">Holograma</h3>
-          <div class="seg" id="linkHoloGame">
-            <button type="button" class="on" data-g="normal">Free Fire</button>
-            <button type="button" data-g="max">Free Fire MAX</button>
-          </div>
-          <div class="toggle-row">
-            <div><h4>Holograma</h4><p>Visual holografico no mapa</p></div>
-            <button class="switch" type="button" id="swLinkHolo"></button>
-          </div>
-          <div class="toggle-row">
-            <div><h4>ESP GELO</h4><p>Parede transparente</p></div>
-            <button class="switch" type="button" id="swLinkGloo"></button>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
-            <button class="btn btn-main" onclick="linkHoloPatch()" style="width:auto;min-width:140px">Aplicar</button>
-            <button class="btn btn-sm" onclick="linkHoloRestore()">Restaurar</button>
-          </div>
-          <div class="log" id="holoLog"><div>Selecione o modo e clique em aplicar</div></div>
-        </div>
-
         <div class="card" style="max-width:560px">
           <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:1.4px;margin-bottom:14px">Comando</h3>
-          <div class="field" style="margin:0 0 10px"><label>Shell (roda como root)</label><input id="linkCmd" placeholder="id"></div>
+          <div class="field" style="margin:0 0 10px"><label>Shell (root)</label><input id="linkCmd" placeholder="id"></div>
           <button class="btn btn-main" onclick="linkExecCmd()" style="width:auto;min-width:140px">Executar</button>
           <div class="log" id="cmdLog"><div>Pronto</div></div>
         </div>
@@ -1035,13 +996,29 @@ document.getElementById('loginEye').addEventListener('click',function(){
   }
   function setHsBtns(on){document.querySelectorAll('#hsGrid button').forEach(function(b){b.disabled=!on;});}
   function injectHS(mode){
-    if(!state.live){log($('hsLog'),'Rode node server.js','err');return;}
+    if(linkOnline && linkKey){
+      if(state.busy)return;state.busy=true;setHsBtns(false);clearLog($('hsLog'));
+      log($('hsLog'),'Injetando via agent: '+mode+' ('+state.hsGame+')...');
+      fetch('/api/agent/hs-inject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:linkKey,mode:mode,game:state.hsGame||'normal'})})
+        .then(function(r){return r.json();}).then(function(d){
+          state.busy=false;setHsBtns(true);
+          if(d.ok){(d.logs||[]).forEach(function(l){log($('hsLog'),l,'ok');});}
+          else{(d.logs||[]).forEach(function(l){log($('hsLog'),l);});log($('hsLog'),d.error||'Falha','err');}
+        }).catch(function(e){state.busy=false;setHsBtns(true);log($('hsLog'),'Erro: '+e.message,'err');});
+      return;
+    }
+    if(!state.live){log($('hsLog'),'Conecte o SSH ou o Link','err');return;}
     if(!state.ssh){log($('hsLog'),'Conecte o SSH primeiro','err');go('conn');return;}
     if(state.busy)return;
     state.busy=true;setHsBtns(false);clearLog($('hsLog'));
     send({type:'hs_inject_b64',data:{mode:mode,game:state.hsGame||'normal'}});
   }
-  function needSsh(logEl){if(!state.live){log(logEl,'Rode node server.js','err');return false;}if(!state.ssh){log(logEl,'Conecte o SSH primeiro','err');go('conn');return false;}return true;}
+  function needSsh(logEl){
+    if(linkOnline && linkKey) return true;
+    if(!state.live){log(logEl,'Conecte o SSH ou o Link','err');return false;}
+    if(!state.ssh){log(logEl,'Conecte o SSH primeiro','err');go('conn');return false;}
+    return true;
+  }
   function setAuth(m){state.auth=m;$('authKeyBtn').classList.toggle('on',m==='key');$('authPassBtn').classList.toggle('on',m==='pass');$('keyField').style.display=m==='key'?'block':'none';$('passField').style.display=m==='pass'?'block':'none';if(m==='key')$('keyBox').style.display='block';}
   $('authKeyBtn').addEventListener('click',function(){setAuth('key');});
   $('authPassBtn').addEventListener('click',function(){setAuth('pass');});
@@ -1088,11 +1065,34 @@ document.getElementById('loginEye').addEventListener('click',function(){
   $('swHolo').addEventListener('click',function(){holoOn=!holoOn;$('swHolo').classList.toggle('on',holoOn);});
   $('swGloo').addEventListener('click',function(){glooOn=!glooOn;$('swGloo').classList.toggle('on',glooOn);});
   $('holoApply').addEventListener('click',function(){
+    var mode=1;if(glooOn)mode=2;
+    if(linkOnline && linkKey){
+      if(state.busy)return;state.busy=true;
+      clearLog($('holoLog'));log($('holoLog'),'Aplicando via agent...');
+      fetch('/api/agent/holo-patch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:linkKey,game:state.holoGame,mode:mode})})
+        .then(function(r){return r.json();}).then(function(d){
+          state.busy=false;
+          if(d.ok){(d.logs||[]).forEach(function(l){log($('holoLog'),l,'ok');});}
+          else{(d.logs||[]).forEach(function(l){log($('holoLog'),l);});log($('holoLog'),d.error||'Falha','err');}
+        }).catch(function(e){state.busy=false;log($('holoLog'),'Erro: '+e.message,'err');});
+      return;
+    }
     if(!needSsh($('holoLog')))return;if(state.busy)return;state.busy=true;
-    clearLog($('holoLog'));var mode=1;if(glooOn)mode=2;
+    clearLog($('holoLog'));
     send({type:'holo_patch',data:{game:state.holoGame,mode:mode}});
   });
   $('holoRestore').addEventListener('click',function(){
+    if(linkOnline && linkKey){
+      if(state.busy)return;state.busy=true;
+      clearLog($('holoLog'));log($('holoLog'),'Restaurando via agent...');
+      fetch('/api/agent/holo-restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:linkKey,game:state.holoGame})})
+        .then(function(r){return r.json();}).then(function(d){
+          state.busy=false;
+          if(d.ok){(d.logs||[]).forEach(function(l){log($('holoLog'),l,'ok');});}
+          else{(d.logs||[]).forEach(function(l){log($('holoLog'),l);});log($('holoLog'),d.error||'Falha','err');}
+        }).catch(function(e){state.busy=false;log($('holoLog'),'Erro: '+e.message,'err');});
+      return;
+    }
     if(!needSsh($('holoLog')))return;if(state.busy)return;state.busy=true;
     clearLog($('holoLog'));send({type:'holo_restore',data:{game:state.holoGame}});
   });
@@ -1103,26 +1103,8 @@ document.getElementById('loginEye').addEventListener('click',function(){
   setEngineUI();
   connectEngine();
 
-  // ── Link: dispositivo online + HS/Holograma via agent ──
-  var linkKey='',linkGame='normal',linkHoloGame='normal';
-  var linkHoloOn=false,linkGlooOn=false;
-  var linkBusy=false;
-
-  function linkSegBind(el,key){
-    el.querySelectorAll('button').forEach(function(b){
-      b.addEventListener('click',function(){
-        el.querySelectorAll('button').forEach(function(x){x.classList.remove('on');});
-        b.classList.add('on');
-        if(key==='hs')linkGame=b.getAttribute('data-g');
-        else linkHoloGame=b.getAttribute('data-g');
-      });
-    });
-  }
-  linkSegBind(document.getElementById('linkHsGame'),'hs');
-  linkSegBind(document.getElementById('linkHoloGame'),'holo');
-
-  if($('swLinkHolo'))$('swLinkHolo').addEventListener('click',function(){linkHoloOn=!linkHoloOn;$('swLinkHolo').classList.toggle('on',linkHoloOn);});
-  if($('swLinkGloo'))$('swLinkGloo').addEventListener('click',function(){linkGlooOn=!linkGlooOn;$('swLinkGloo').classList.toggle('on',linkGlooOn);});
+  // ── Link: conexao reversa ──
+  var linkKey='',linkOnline=false;
 
   function linkGetKey(){return ($('linkKey').value||'').trim()||linkKey;}
 
@@ -1130,83 +1112,26 @@ document.getElementById('loginEye').addEventListener('click',function(){
     fetch('/api/agent/list').then(function(r){return r.json();}).then(function(list){
       var badge=$('linkBadge'),txt=$('linkBadgeText');
       var online=(list||[]).filter(function(d){return d.online;});
-      if(online.length>0){
+      var lk=linkGetKey();
+      var found=online.find(function(d){return d.key===lk;});
+      if(found){
+        linkOnline=true;linkKey=found.key;
         badge.className='badge on';
-        var lk=linkGetKey();
-        var found=online.find(function(d){return d.key===lk;});
-        if(found){
-          txt.textContent=(found.id||'device')+' ONLINE';
-          $('linkDeviceInfo').textContent=found.key+' | '+(found.id||'')+' | IP: '+(found.ip||'');
-          if(!linkKey)linkKey=found.key;
-        }else{
-          txt.textContent=online.length+' device(s) online';
-          $('linkDeviceInfo').textContent=online.map(function(d){return d.key+' ('+(d.id||'?')+')'}).join(', ');
-        }
+        txt.textContent='ONLINE';
+        $('linkDeviceInfo').textContent=found.key+' | '+(found.id||'')+' | IP: '+(found.ip||'');
+        log($('linkLog'),'Dispositivo conectado','ok');
+      }else if(online.length>0){
+        linkOnline=false;
+        badge.className='badge on';
+        txt.textContent=online.length+' device(s) online';
+        $('linkDeviceInfo').textContent=online.map(function(d){return d.key+' ('+(d.id||'?')+')'}).join(', ');
       }else{
+        linkOnline=false;
         badge.className='badge';
         txt.textContent='Offline';
         $('linkDeviceInfo').textContent='Nenhum dispositivo conectado';
       }
-    }).catch(function(){});
-  }
-
-  function linkApi(url,body,cb){
-    fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
-      .then(function(r){return r.json();}).then(cb).catch(function(e){
-        log($('cmdLog'),'Erro: '+e.message,'err');
-      });
-  }
-
-  function linkHsInject(mode){
-    var k=linkGetKey();
-    if(!k){log($('hsLog'),'Digite a key','err');return;}
-    if(linkBusy)return;
-    linkBusy=true;clearLog($('hsLog'));
-    log($('hsLog'),'Injetando '+mode+' ('+linkGame+')...');
-    linkApi('/api/agent/hs-inject',{key:k,mode:mode,game:linkGame},function(d){
-      linkBusy=false;
-      if(d.ok){
-        (d.logs||[]).forEach(function(l){log($('hsLog'),l,'ok');});
-      }else{
-        (d.logs||[]).forEach(function(l){log($('hsLog'),l);});
-        log($('hsLog'),d.error||'Falha','err');
-      }
-    });
-  }
-
-  function linkHoloPatch(){
-    var k=linkGetKey();
-    if(!k){log($('holoLog'),'Digite a key','err');return;}
-    if(linkBusy)return;
-    linkBusy=true;clearLog($('holoLog'));
-    var m=linkGlooOn?2:(linkHoloOn?1:2);
-    log($('holoLog'),'Aplicando Holograma ('+linkHoloGame+', mode '+m+')...');
-    linkApi('/api/agent/holo-patch',{key:k,game:linkHoloGame,mode:m},function(d){
-      linkBusy=false;
-      if(d.ok){
-        (d.logs||[]).forEach(function(l){log($('holoLog'),l,'ok');});
-      }else{
-        (d.logs||[]).forEach(function(l){log($('holoLog'),l);});
-        log($('holoLog'),d.error||'Falha','err');
-      }
-    });
-  }
-
-  function linkHoloRestore(){
-    var k=linkGetKey();
-    if(!k){log($('holoLog'),'Digite a key','err');return;}
-    if(linkBusy)return;
-    linkBusy=true;clearLog($('holoLog'));
-    log($('holoLog'),'Restaurando Holograma ('+linkHoloGame+')...');
-    linkApi('/api/agent/holo-restore',{key:k,game:linkHoloGame},function(d){
-      linkBusy=false;
-      if(d.ok){
-        (d.logs||[]).forEach(function(l){log($('holoLog'),l,'ok');});
-      }else{
-        (d.logs||[]).forEach(function(l){log($('holoLog'),l);});
-        log($('holoLog'),d.error||'Falha','err');
-      }
-    });
+    }).catch(function(){linkOnline=false;});
   }
 
   function linkExecCmd(){
