@@ -1,0 +1,7 @@
+id=kabe-clean
+name=KABE PRIVATE
+version=v1.0
+versionCode=1
+author=KABE
+description=Agent KABE — conecta ao site via Firebase
+web=true
