@@ -1,0 +1,7 @@
+id=kabe-firebase
+name=KABE PRIVATE
+version=v3.0
+versionCode=3
+author=KABE
+description=Conexao ao KABE PRIVATE via Firebase — funciona de qualquer lugar sem servidor
+web=true

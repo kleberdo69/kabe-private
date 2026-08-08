@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>KABE PRIVATE</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#0a0a0f;color:#eee;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.box{background:#12121a;border:1px solid #2a2a3a;border-radius:16px;padding:30px;max-width:360px;width:100%;text-align:center}
+h1{font-size:22px;background:linear-gradient(135deg,#ff6b9d,#c44dff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px}
+.key{background:#0d0d14;border:2px solid #c44dff;border-radius:10px;padding:20px;margin:16px 0;cursor:pointer;transition:border-color .2s}
+.key:hover{border-color:#ff6b9d}
+.key .label{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#666;margin-bottom:8px}
+.key .value{font-size:24px;font-weight:800;color:#c44dff;font-family:monospace;word-break:break-all}
+.key .tap{font-size:11px;color:#555;margin-top:10px}
+.status{font-size:12px;color:#888;margin-top:16px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.dot.on{background:#00ff88;box-shadow:0 0 6px #00ff88}
+.dot.off{background:#ff4444}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#c44dff;color:#fff;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;display:none;z-index:99}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>KABE PRIVATE</h1>
+  <p style="color:#888;font-size:13px">Cole essa key no site para conectar</p>
+  <div class="key" onclick="copy()">
+    <div class="label">Sua Key</div>
+    <div class="value" id="k">carregando...</div>
+    <div class="tap">toque para copiar</div>
+  </div>
+  <div class="status" id="s"><span class="dot" id="d"></span><span id="st">verificando...</span></div>
+</div>
+<div class="toast" id="t"></div>
+<script>
+var KEY='';
+function $(id){return document.getElementById(id)}
+function toast(m){var t=$('t');t.textContent=m;t.style.display='block';setTimeout(function(){t.style.display='none'},2000)}
+function load(){
+  if(window.ksu&&window.ksu.exec){
+    window.ksu.exec('cat /data/adb/kabe/key 2>/dev/null',function(r){
+      r=(r||'').trim();
+      if(r&&r.indexOf('KABE-')===0){KEY=r;$('k').textContent=KEY;}
+    });
+    window.ksu.exec('cat /data/adb/kabe/agent.log 2>/dev/null | tail -1',function(r){
+      r=(r||'').trim();
+      if(r&&r.indexOf('registered')>-1){$('d').className='dot on';$('st').textContent='Online';}
+      else if(r){$('d').className='dot off';$('st').textContent=r;}
+    });
+  }
+}
+function copy(){
+  if(!KEY)return;
+  if(navigator.clipboard){navigator.clipboard.writeText(KEY).then(function(){toast('Copiada!')})}
+  else{var t=document.createElement('textarea');t.value=KEY;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);toast('Copiada!');}
+}
+load();setInterval(load,5000);
+</script>
+</body>
+</html>
