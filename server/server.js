@@ -234,29 +234,66 @@ let ssh = null;               // conexão ssh2 atual
 let rootMethod = null;        // null | 'direct' | 'su'
 let cmdQueue = Promise.resolve(); // serializa comandos (evita sobreposição)
 let agentKey = null;          // key do agente conectado (modo reverso)
+let agentServer = null;       // URL do servidor remoto do agent
 let useAgent = false;         // true quando rota via agente
 
-// ── Agent exec: envia cmd ao agente e espera saida ──────
+// ── Agent exec: envia cmd ao servidor remoto e espera saida ──────
 function agentExec(cmd, ws) {
+  const https = require('https');
   return new Promise((resolve, reject) => {
-    if (!agentKey) return reject(new Error('Agent nao conectado'));
-    const agent = agents.get(agentKey);
-    if (!agent) return reject(new Error('Agent offline'));
-    const id = Date.now();
-    agent.pending.push({ id, cmd });
-    safeSend(ws, { type: 'exec_output', line: '> ' + cmd + '\n' });
-    let attempts = 0;
-    const timer = setInterval(() => {
-      attempts++;
-      if (attempts > 150) { clearInterval(timer); reject(new Error('Timeout agent (30s)')); return; }
-      const match = agent.output.find(o => o.id === id);
-      if (match) {
-        clearInterval(timer);
-        agent.output = agent.output.filter(o => o.id !== id);
-        safeSend(ws, { type: 'exec_output', line: match.output });
-        resolve({ code: match.exit, out: match.output });
-      }
-    }, 200);
+    const server = agentServer || 'https://kabe-private-production.up.railway.app';
+    const key = agentKey;
+    if (!key) return reject(new Error('Agent nao conectado'));
+
+    const postData = 'key=' + encodeURIComponent(key) + '&cmd=' + encodeURIComponent(cmd);
+    const urlObj = new URL(server + '/api/agent/command');
+    const options = {
+      hostname: urlObj.hostname,
+      path: urlObj.pathname,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(postData) },
+      timeout: 10000
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => data += chunk);
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          if (!json.ok) return reject(new Error('Erro: ' + (json.error || data)));
+          const cmdId = json.id;
+
+          // Poll for output
+          let attempts = 0;
+          const poll = setInterval(() => {
+            attempts++;
+            if (attempts > 30) { clearInterval(poll); reject(new Error('Timeout output')); return; }
+
+            https.get(server + '/api/agent/output?key=' + encodeURIComponent(key), (pRes) => {
+              let pData = '';
+              pRes.on('data', (c) => pData += c);
+              pRes.on('end', () => {
+                try {
+                  const outputs = JSON.parse(pData);
+                  const match = outputs.find(o => o.id === cmdId);
+                  if (match) {
+                    clearInterval(poll);
+                    let output = '';
+                    try { output = Buffer.from(match.output || '', 'base64').toString('utf8'); } catch(e) { output = match.output || ''; }
+                    safeSend(ws, { type: 'exec_output', line: output });
+                    resolve({ code: match.exit, out: output });
+                  }
+                } catch(e) {}
+              });
+            }).on('error', () => {});
+          }, 1000);
+        } catch(e) { reject(e); }
+      });
+    });
+    req.on('error', (e) => reject(new Error('Erro conexao: ' + e.message)));
+    req.write(postData);
+    req.end();
   });
 }
 
@@ -756,6 +793,7 @@ wss.on('connection', (ws) => {
       if (ssh) { try { ssh.end(); } catch (e) {} ssh = null; }
       useAgent = false;
       agentKey = null;
+      agentServer = null;
       rootMethod = null;
       safeSend(ws, { type: 'ssh_status', status: 'disconnected' });
       safeSend(ws, { type: 'engine_status', mode: 'live', ssh: false });
@@ -763,19 +801,19 @@ wss.on('connection', (ws) => {
 
     else if (msg.type === 'agent_connect') {
       const key = msg.data && msg.data.key;
+      const remoteServer = msg.data && msg.data.server;
       if (!key) { safeSend(ws, { type: 'ssh_status', status: 'error', msg: 'Key obrigatoria' }); return; }
-      const agent = agents.get(key);
-      if (!agent || !agent.online) {
-        safeSend(ws, { type: 'ssh_status', status: 'error', msg: 'Agent nao encontrado ou offline. Instale o modulo no celular.' });
-        return;
-      }
-      useAgent = true;
+      
+      // Store remote server URL for agent commands
       agentKey = key;
+      agentServer = remoteServer || 'https://kabe-private-production.up.railway.app';
+      useAgent = true;
       rootMethod = 'su';
+      
       safeSend(ws, { type: 'ssh_status', status: 'connected', mode: 'agent' });
       safeSend(ws, { type: 'engine_status', mode: 'live', ssh: true });
       safeSend(ws, { type: 'exec_done', root: true, code: 0 });
-      log(ws, 'Conectado via AGENTE: ' + key);
+      log(ws, 'Conectado via AGENTE: ' + key + ' @ ' + agentServer);
     }
 
     else if (msg.type === 'exec' && msg.data && msg.data.cmd) {

@@ -702,6 +702,10 @@ document.getElementById('loginEye').addEventListener('click',function(){
             <label>Key do Agent</label>
             <input id="agentKey" type="text" placeholder="KABE-XXXXXXXX" style="font-family:monospace;font-size:16px;letter-spacing:1px;text-transform:uppercase">
           </div>
+          <div class="field">
+            <label>Servidor do Agent (onde o modulo conecta)</label>
+            <input id="agentServer" type="text" value="https://kabe-private-production.up.railway.app" style="font-family:monospace;font-size:12px">
+          </div>
           <div class="actions">
             <button class="btn btn-main" id="agentConnectBtn" type="button" style="width:auto;min-width:150px">Conectar Agent</button>
             <button class="btn btn-sm" id="agentDisconnectBtn" type="button" style="display:none">Desconectar</button>
@@ -1072,29 +1076,40 @@ document.getElementById('loginEye').addEventListener('click',function(){
   }
 
   $('agentConnectBtn').addEventListener('click',function(){
-    if(!state.live){log($('agentLog'),'Rode node server.js','err');return;}
     var key=$('agentKey').value.trim().toUpperCase();
-    if(!key){log($('agentLog'),'Cole a key do agent (KABE-XXXXXXXX)','err');return;}
+    if(!key){log($('agentLog'),'Cole a key do agent','err');return;}
+    var agentServer=$('agentServer').value.trim();
+    if(!agentServer){log($('agentLog'),'Configure o servidor do agent','err');return;}
     saveAgentKey();
-    log($('agentLog'),'Conectando ao agent '+key+'...');
+    log($('agentLog'),'Verificando agent no servidor...');
     $('agentConnectBtn').disabled=true;$('agentConnectBtn').textContent='Conectando...';
 
-    // Verificar se agent esta online
-    fetch('/api/agent/list').then(function(r){return r.json();}).then(function(list){
+    // Query agent server directly (not local server.js)
+    fetch(agentServer+'/api/agent/list').then(function(r){return r.json();}).then(function(list){
       var found=null;
       for(var i=0;i<list.length;i++){
         if(list[i].key===key&&list[i].online){found=list[i];break;}
       }
       if(!found){
-        log($('agentLog'),'Agent nao encontrado. Instale o modulo no celular e aguarde 5s.','err');
+        // Check if at least registered
+        var registered=false;
+        for(var i=0;i<list.length;i++){
+          if(list[i].key===key){registered=true;break;}
+        }
+        if(registered){
+          log($('agentLog'),'Agent registrado mas offline. Aguarde 5s...');
+        }else{
+          log($('agentLog'),'Agent nao encontrado. Instale o modulo no celular.');
+        }
         $('agentConnectBtn').disabled=false;$('agentConnectBtn').textContent='Conectar Agent';
         return;
       }
-      // Conectar via WebSocket usando agent key
-      send({type:'agent_connect',data:{key:key}});
+      // Connect via WebSocket using agent key + server
+      state.agentServer=agentServer;
+      send({type:'agent_connect',data:{key:key,server:agentServer}});
       log($('agentLog'),'Agent encontrado ('+found.id+'). Conectando...','ok');
     }).catch(function(e){
-      log($('agentLog'),'Erro ao verificar agent: '+e.message,'err');
+      log($('agentLog'),'Erro ao verificar: '+e.message,'err');
       $('agentConnectBtn').disabled=false;$('agentConnectBtn').textContent='Conectar Agent';
     });
   });
