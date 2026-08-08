@@ -112,6 +112,7 @@ app.post('/api/keys/toggle', (req, res) => {
 // ── API: Auth ─────────────────────────────────────────────
 app.post('/api/auth/register', (req, res) => {
   const { key, user, pass } = req.body;
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
   if (!key || !user || !pass) return res.status(400).json({ error: 'Campos obrigatorios' });
   const k = keysData.keys.find(x => x.key === key);
   if (!k) return res.status(400).json({ error: 'Key invalida' });
@@ -119,7 +120,7 @@ app.post('/api/auth/register', (req, res) => {
   if (k.usedBy) return res.status(400).json({ error: 'Key ja utilizada' });
   if (usersData.users.find(u => u.user === user)) return res.status(400).json({ error: 'Usuario ja existe' });
   k.usedBy = user;
-  usersData.users.push({ user, pass, created: new Date().toISOString() });
+  usersData.users.push({ user, pass, ip, created: new Date().toISOString() });
   saveJSON(KEYS_FILE, keysData);
   saveJSON(USERS_FILE, usersData);
   res.json({ ok: true });
@@ -127,8 +128,12 @@ app.post('/api/auth/register', (req, res) => {
 
 app.post('/api/auth/login', (req, res) => {
   const { user, pass } = req.body;
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
   const u = usersData.users.find(x => x.user === user && x.pass === pass);
   if (!u) return res.status(400).json({ error: 'Usuario ou senha incorretos' });
+  if (u.ip && u.ip !== ip) return res.status(400).json({ error: 'Acesso negado deste dispositivo' });
+  u.lastIp = ip;
+  saveJSON(USERS_FILE, usersData);
   res.json({ ok: true, user: u.user });
 });
 
@@ -301,15 +306,25 @@ app.post('/api/agent/hs-inject', async (req, res) => {
       if (!fs.existsSync(local)) throw new Error('Arquivo nao encontrado');
       const data = fs.readFileSync(local);
       const b64 = data.toString('base64');
-      const tmp = '/data/local/tmp/.kabe_tmp';
+      const tmp = '/data/local/tmp/.kabe_hs.b64';
+      const tmpBin = '/data/local/tmp/.kabe_hs.bin';
 
-      // Enviar base64 em um unico comando (sem chunks separados)
-      await agentExec(key, 'echo -n ' + q(b64) + ' | base64 -d > ' + q(tmp) + ' && ' +
-        'mkdir -p ' + q(target) + ' && ' +
-        'cp -f ' + q(tmp) + ' ' + q(target + f) + ' && ' +
+      // Limpar e criar dir
+      await agentExec(key, 'rm -f ' + q(tmp) + ' ' + q(tmpBin) + ' && mkdir -p ' + q(target), 15000);
+
+      // Enviar base64 em chunks de 50k
+      for (let i = 0; i < b64.length; i += 50000) {
+        const chunk = b64.slice(i, i + 50000);
+        await agentExec(key, 'echo -n ' + q(chunk) + ' >> ' + q(tmp), 15000);
+      }
+
+      // Decodificar e copiar
+      await agentExec(key,
+        'base64 -d ' + q(tmp) + ' > ' + q(tmpBin) + ' && ' +
+        'cp -f ' + q(tmpBin) + ' ' + q(target + f) + ' && ' +
         'chmod 666 ' + q(target + f) + ' && ' +
-        'rm -f ' + q(tmp),
-        20000
+        'rm -f ' + q(tmp) + ' ' + q(tmpBin),
+        15000
       );
     }
 

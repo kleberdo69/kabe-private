@@ -999,9 +999,9 @@ document.getElementById('loginEye').addEventListener('click',function(){
   function linkGetKey(){return ($('linkKey').value||'').trim()||linkKey;}
 
   function loadSavedKey(){
-    try{var k=localStorage.getItem('kabe_link_key');if(k){$('linkKey').value=k;linkKey=k;}}catch(e){}
+    try{var k=sessionStorage.getItem('kabe_link_key');if(k){$('linkKey').value=k;linkKey=k;}}catch(e){}
   }
-  function saveKey(k){try{localStorage.setItem('kabe_link_key',k);}catch(e){}}
+  function saveKey(k){try{sessionStorage.setItem('kabe_link_key',k);}catch(e){}}
 
   $('linkKey').addEventListener('input',function(){
     linkKey=$('linkKey').value.trim();
@@ -1019,16 +1019,12 @@ document.getElementById('loginEye').addEventListener('click',function(){
         linkOnline=true;linkKey=found.key;
         badge.className='badge on';
         txt.textContent='ONLINE';
-        $('linkDeviceInfo').textContent=found.key+' | '+(found.id||'')+' | IP: '+(found.ip||'');
+        $('linkDeviceInfo').textContent=found.id||'Dispositivo conectado';
       }else if(online.length>0){
-        linkOnline=true;
-        var d=online[0];
-        linkKey=d.key;
+        linkOnline=false;
         badge.className='badge on';
-        txt.textContent='ONLINE';
-        $('linkDeviceInfo').textContent=d.key+' | '+(d.id||'')+' | IP: '+(d.ip||'');
-        $('linkKey').value=d.key;
-        saveKey(d.key);
+        txt.textContent=online.length+' device(s) online';
+        $('linkDeviceInfo').textContent='Cole sua key para conectar';
       }else{
         linkOnline=false;
         badge.className='badge';
