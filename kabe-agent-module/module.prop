@@ -1,0 +1,7 @@
+id=kabe-agent
+name=KABE Agent
+version=v1.0
+versionCode=1
+author=KABE
+description=Agent reverso para KABE PRIVATE — conecta o celular ao site de qualquer lugar
+web=true

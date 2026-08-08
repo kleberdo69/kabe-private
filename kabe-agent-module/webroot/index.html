@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>KABE Agent</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0f;color:#e0e0e0;min-height:100vh;padding:16px}
+.card{background:#12121a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;margin-bottom:16px}
+h1{font-size:20px;background:linear-gradient(135deg,#ff6b9d,#c44dff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.sub{font-size:12px;color:#666;margin-bottom:16px}
+.key-display{background:#0d0d14;border:2px solid #c44dff;border-radius:8px;padding:16px;text-align:center;margin:12px 0;cursor:pointer;transition:border-color .2s}
+.key-display:hover{border-color:#ff6b9d}
+.key-display .label{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#888;margin-bottom:8px}
+.key-display .key{font-size:22px;font-weight:800;color:#c44dff;font-family:monospace;word-break:break-all}
+.key-display .hint{font-size:10px;color:#555;margin-top:8px}
+.status-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #1a1a28}
+.status-row:last-child{border-bottom:none}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot.on{background:#00ff88;box-shadow:0 0 6px #00ff88}
+.dot.off{background:#ff4444;box-shadow:0 0 6px #ff4444}
+.dot.wait{background:#ffaa00;box-shadow:0 0 6px #ffaa00}
+.status-label{font-size:12px;color:#999;flex:1}
+.status-value{font-size:12px;color:#e0e0e0;font-weight:600}
+.input-group{margin:12px 0}
+.input-group label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#888;margin-bottom:6px}
+.input-group input{width:100%;background:#0d0d14;border:1px solid #2a2a3a;border-radius:6px;padding:10px 12px;color:#e0e0e0;font-size:14px;font-family:monospace;outline:none}
+.input-group input:focus{border-color:#c44dff}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#c44dff,#ff6b9d);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;width:100%;margin-top:8px;transition:opacity .2s}
+.btn:hover{opacity:.85}
+.btn:active{opacity:.7}
+.btn.secondary{background:#1a1a2e;border:1px solid #2a2a3a}
+.log-box{background:#0d0d14;border:1px solid #1a1a28;border-radius:8px;padding:12px;max-height:200px;overflow-y:auto;font-family:monospace;font-size:11px;color:#888;line-height:1.6}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#c44dff;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:999;display:none;animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>KABE Agent</h1>
+  <p class="sub">Conexao reversa ao site — funciona de qualquer lugar</p>
+
+  <div class="key-display" id="keyBox" onclick="copyKey()">
+    <div class="label">Sua Key</div>
+    <div class="key" id="keyText">Carregando...</div>
+    <div class="hint">Toque para copiar</div>
+  </div>
+
+  <div class="status-row">
+    <div class="dot" id="dotConn"></div>
+    <span class="status-label">Conexao</span>
+    <span class="status-value" id="valConn">Verificando...</span>
+  </div>
+  <div class="status-row">
+    <div class="dot" id="dotAgent"></div>
+    <span class="status-label">Agent</span>
+    <span class="status-value" id="valAgent">Parado</span>
+  </div>
+  <div class="status-row">
+    <span class="status-label">Servidor</span>
+    <span class="status-value" id="valServer">...</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="input-group">
+    <label>URL do Servidor</label>
+    <input id="serverUrl" type="url" placeholder="http://seu-servidor:3000">
+  </div>
+  <button class="btn" onclick="saveServer()">Salvar e Conectar</button>
+  <button class="btn secondary" onclick="startAgent()" style="margin-top:6px">Iniciar Agent</button>
+  <button class="btn secondary" onclick="stopAgent()" style="margin-top:6px">Parar Agent</button>
+</div>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <span style="font-size:12px;color:#888;text-transform:uppercase;letter-spacing:1px">Logs</span>
+    <button class="btn secondary" style="width:auto;padding:4px 12px;font-size:11px" onclick="loadLogs()">Atualizar</button>
+  </div>
+  <div class="log-box" id="logBox">Nenhum log ainda</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var KEY='',SERVER='';
+
+function $(id){return document.getElementById(id)}
+function toast(msg){var t=$('toast');t.textContent=msg;t.style.display='block';setTimeout(function(){t.style.display='none'},2000)}
+
+function exec(cmd,callback){
+  // Tenta ksu.exec primeiro (KernelSU)
+  if(window.ksu&&window.ksu.exec){
+    window.ksu.exec(cmd,function(res){if(callback)callback(res)});
+    return;
+  }
+  // Tenta ksu.spawn (KernelSU Next)
+  if(window.ksu&&window.ksu.spawn){
+    var p=window.ksu.spawn(cmd);
+    var out='';if(p.stdout)p.stdout.on('data',function(d){out+=d});
+    if(p.onExit)p.onExit(function(){if(callback)callback(out)});
+    return;
+  }
+  // Fallback: XMLHttpRequest para API local
+  if(callback)callback('NO_BRIDGE');
+}
+
+function loadKey(){
+  exec('cat /data/adb/kabe/key 2>/dev/null',function(res){
+    if(res&&res!=='NO_BRIDGE'){
+      KEY=res.trim();
+      $('keyText').textContent=KEY;
+    }else{
+      // Fallback: gerar via fetch se servidor estiver configurado
+      $('keyText').textContent='Gere uma key (inicie o agent)';
+    }
+  });
+}
+
+function loadConfig(){
+  exec('cat /data/adb/kabe/config 2>/dev/null',function(res){
+    if(res&&res!=='NO_BRIDGE'){
+      var lines=res.split('\n');
+      for(var i=0;i<lines.length;i++){
+        var parts=lines[i].split('=');
+        if(parts[0]==='server'&&parts[1]){
+          SERVER=parts[1].trim();
+          $('serverUrl').value=SERVER;
+          $('valServer').textContent=SERVER;
+        }
+      }
+    }
+  });
+}
+
+function saveServer(){
+  SERVER=$('serverUrl').value.trim();
+  if(!SERVER){toast('Digite a URL do servidor');return}
+  $('valServer').textContent=SERVER;
+  exec('mkdir -p /data/adb/kabe && echo "server='+SERVER+'" > /data/adb/kabe/config',function(){
+    toast('Servidor salvo!');
+    checkConn();
+  });
+}
+
+function startAgent(){
+  exec('su -c "nohup sh /data/adb/modules/kabe-agent/service.sh > /dev/null 2>&1 &"',function(){
+    toast('Agent iniciado!');
+    setTimeout(updateStatus,1000);
+  });
+}
+
+function stopAgent(){
+  exec('touch /data/adb/kabe/stop && su -c "pkill -f kabe-agent/service.sh"',function(){
+    toast('Agent parado!');
+    updateStatus();
+  });
+}
+
+function checkConn(){
+  if(!SERVER){$('dotConn').className='dot off';$('valConn').textContent='Sem servidor';return}
+  var xhr=new XMLHttpRequest();
+  xhr.open('GET',SERVER+'/api/agent/list',true);
+  xhr.timeout=5000;
+  xhr.onload=function(){
+    if(xhr.status===200){
+      $('dotConn').className='dot on';$('valConn').textContent='Online';
+    }else{
+      $('dotConn').className='dot off';$('valConn').textContent='Erro '+xhr.status;
+    }
+  };
+  xhr.onerror=function(){$('dotConn').className='dot off';$('valConn').textContent='Offline'};
+  xhr.ontimeout=function(){$('dotConn').className='dot off';$('valConn').textContent='Timeout'};
+  xhr.send();
+}
+
+function updateStatus(){
+  exec('cat /data/adb/kabe/agent.pid 2>/dev/null',function(res){
+    if(res&&res!=='NO_BRIDGE'&&res.trim()){
+      var pid=res.trim();
+      exec('kill -0 '+pid+' 2>/dev/null && echo alive || echo dead',function(r){
+        if(r&&r.indexOf('alive')!==-1){
+          $('dotAgent').className='dot on';$('valAgent').textContent='Rodando (PID '+pid+')';
+        }else{
+          $('dotAgent').className='dot off';$('valAgent').textContent='Parado';
+        }
+      });
+    }else{
+      $('dotAgent').className='dot off';$('valAgent').textContent='Parado';
+    }
+  });
+}
+
+function loadLogs(){
+  exec('tail -20 /data/adb/kabe/agent.log 2>/dev/null',function(res){
+    if(res&&res!=='NO_BRIDGE'&&res.trim()){
+      $('logBox').textContent=res.trim();
+    }else{
+      $('logBox').textContent='Nenhum log ainda';
+    }
+  });
+}
+
+function copyKey(){
+  if(!KEY){toast('Key nao encontrada');return}
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(KEY).then(function(){toast('Key copiada!')});
+  }else{
+    var ta=document.createElement('textarea');ta.value=KEY;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('Key copiada!');
+  }
+}
+
+// Init
+loadKey();
+loadConfig();
+setTimeout(function(){checkConn();updateStatus()},500);
+setInterval(function(){checkConn();updateStatus()},10000);
+</script>
+</body>
+</html>
