@@ -893,8 +893,8 @@ document.getElementById('loginEye').addEventListener('click',function(){
   function onMsg(msg){
     if(msg.type==='engine_status'){state.live=msg.mode==='live';setEngineUI();}
     else if(msg.type==='hs_list'){renderHS(msg.modes||{});}
-    else if(msg.type==='hs_start'){clearLog($('hsLog'));log($('hsLog'),'Injetando '+msg.mode+'...');}
-    else if(msg.type==='hs_done'){state.busy=false;setHsBtns(true);if(msg.ok)log($('hsLog'),'Sucesso — '+msg.mode+' ('+msg.files+' arquivo(s))','ok');else log($('hsLog'),msg.error||'Falha','err');}
+    else if(msg.type==='hs_start'){clearLog($('hsLog'));log($('hsLog'),'Injetando...');}
+    else if(msg.type==='hs_done'){state.busy=false;setHsBtns(true);if(msg.ok)log($('hsLog'),'Sucesso','ok');else log($('hsLog'),msg.error||'Falha','err');}
     else if(msg.type==='game_stop_done'){if(msg.ok)log($('holoLog'),'Jogo encerrado. Abra novamente.','ok');else log($('holoLog'),msg.error||'Falha','err');}
     else if(msg.type==='holo_start'){clearLog($('holoLog'));log($('holoLog'),'Executando...');}
     else if(msg.type==='holo_done'){
@@ -935,12 +935,12 @@ document.getElementById('loginEye').addEventListener('click',function(){
   function injectHS(mode){
     if(linkOnline && linkKey){
       if(state.busy)return;state.busy=true;setHsBtns(false);clearLog($('hsLog'));
-      log($('hsLog'),'Injetando: '+mode+' ('+state.hsGame+')...');
+      log($('hsLog'),'Injetando...');
       fetch('/api/agent/hs-inject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:linkKey,mode:mode,game:state.hsGame||'normal'})})
         .then(function(r){return r.json();}).then(function(d){
           state.busy=false;setHsBtns(true);
-          if(d.ok){(d.logs||[]).forEach(function(l){log($('hsLog'),l,'ok');});}
-          else{(d.logs||[]).forEach(function(l){log($('hsLog'),l);});log($('hsLog'),d.error||'Falha','err');}
+          if(d.ok){log($('hsLog'),d.logs[0]||'Sucesso','ok');}
+          else{log($('hsLog'),d.error||'Falha','err');}
         }).catch(function(e){state.busy=false;setHsBtns(true);log($('hsLog'),'Erro: '+e.message,'err');});
       return;
     }

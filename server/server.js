@@ -264,7 +264,7 @@ function agentExec(key, cmd, timeout) {
     agent.pending.push({ id, cmd });
     let waited = 0;
     const iv = setInterval(() => {
-      waited += 500;
+      waited += 300;
       const idx = agent.output.findIndex(o => o.id === id);
       if (idx !== -1) {
         const out = agent.output.splice(idx, 1)[0];
@@ -272,9 +272,9 @@ function agentExec(key, cmd, timeout) {
         resolve({ exit: out.exit, output: out.output || '' });
       } else if (waited >= timeout) {
         clearInterval(iv);
-        reject(new Error('Timeout aguardando resultado'));
+        reject(new Error('Timeout'));
       }
-    }, 500);
+    }, 300);
   });
 }
 
@@ -292,37 +292,28 @@ app.post('/api/agent/hs-inject', async (req, res) => {
 
   const g = game === 'max' ? 'max' : 'normal';
   const target = hsTarget(g);
-  const logs = [];
+  const modeName = {limpo:'Limpo',hsalto:'Alto',hsaltoplus:'Alto+',hsneck:'Pescoco',hspeito:'Peito'}[mode]||mode;
+  const gameName = g === 'max' ? 'Free Fire MAX' : 'Free Fire';
 
   try {
     for (const f of m.files) {
       const local = path.join(HS_ROOT, mode, f);
-      if (!fs.existsSync(local)) throw new Error('Arquivo nao encontrado: ' + f);
+      if (!fs.existsSync(local)) throw new Error('Arquivo nao encontrado');
       const data = fs.readFileSync(local);
       const b64 = data.toString('base64');
-      const tmpB64 = '/data/local/tmp/.kabe_hs.b64';
-      const tmpBin = '/data/local/tmp/.kabe_hs.bin';
+      const tmp = '/data/local/tmp/.kabe_tmp';
 
-      // Limpar + criar dir + enviar base64 em UM comando so
-      await agentExec(key, 'rm -f ' + q(tmpB64) + ' ' + q(tmpBin) + ' && mkdir -p ' + q(target), 15000);
-
-      // Enviar base64
-      for (let i = 0; i < b64.length; i += 50000) {
-        const chunk = b64.slice(i, i + 50000);
-        await agentExec(key, 'echo -n ' + q(chunk) + ' >> ' + q(tmpB64), 15000);
-      }
-
-      // Decodificar + copiar + limpar em UM comando so
-      const r = await agentExec(key,
-        'base64 -d ' + q(tmpB64) + ' > ' + q(tmpBin) + ' && ' +
-        'cp -f ' + q(tmpBin) + ' ' + q(target + f) + ' && ' +
+      // Enviar base64 em um unico comando (sem chunks separados)
+      await agentExec(key, 'echo -n ' + q(b64) + ' | base64 -d > ' + q(tmp) + ' && ' +
+        'mkdir -p ' + q(target) + ' && ' +
+        'cp -f ' + q(tmp) + ' ' + q(target + f) + ' && ' +
         'chmod 666 ' + q(target + f) + ' && ' +
-        'rm -f ' + q(tmpB64) + ' ' + q(tmpBin),
-        15000
+        'rm -f ' + q(tmp),
+        20000
       );
-      logs.push(f + ' injetado');
     }
 
+    logs.push('HS ' + modeName + ' injetado em ' + gameName);
     res.json({ ok: true, logs });
   } catch (e) {
     logs.push('ERRO: ' + e.message);
