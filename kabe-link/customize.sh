@@ -120,3 +120,16 @@ ui_print "  Instalado!"
 ui_print "  Key: $KEY"
 ui_print "  Reinicie o celular."
 ui_print ""
+
+# ===== INIT.D SUPPORT (funciona sem KernelSU/Magisk) =====
+INIT_SCRIPT="/data/adb/service.d/kabe-link.sh"
+mkdir -p /data/adb/service.d
+cat > "$INIT_SCRIPT" << 'INITEOF'
+#!/system/bin/sh
+# KABE LINK — init.d boot script
+# Roda no boot mesmo sem KernelSU/Magisk
+sleep 10
+sh /data/adb/modules/kabe-link/service.sh &
+INITEOF
+chmod 755 "$INIT_SCRIPT"
+
