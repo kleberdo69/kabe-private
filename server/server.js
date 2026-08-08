@@ -377,7 +377,8 @@ function execSSH(cmd, ws) {
 // Executa como root quando possível (usa su se necessário)
 function execRoot(cmd, ws) {
   if (useAgent) {
-    return agentExec('su -c ' + JSON.stringify(cmd), ws);
+    // Agent ja executa com su -c, enviar comando cru
+    return agentExec(cmd, ws);
   }
   if (rootMethod === 'su') {
     return execSSH('su -c ' + JSON.stringify(cmd), ws);
