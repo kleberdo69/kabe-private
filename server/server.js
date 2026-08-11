@@ -22,6 +22,8 @@ const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
 const KEYS_FILE = path.join(DATA_DIR, 'keys.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const ADMIN_SECRET = process.env.ADMIN_SECRET || 'kabe-admin-secret-change-me';
+const adminSessions = new Map();
 
 // Garantir diretorio de dados
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -51,6 +53,18 @@ const wss = new WebSocketServer({ server, path: '/ws' });
 
 // Serve o site que fica na pasta acima (kabe-private/index.html)
 const STATIC_DIR = path.join(__dirname, '..');
+
+// Bloquear admin.html via express.static — só acessa via rota protegida
+app.use((req, res, next) => {
+  if (req.path === '/admin.html') {
+    const token = req.query.token;
+    if (!token || !adminSessions.has(token)) {
+      return res.status(403).send('Acesso negado');
+    }
+  }
+  next();
+});
+
 app.use(express.static(STATIC_DIR));
 
 // Debug: listar arquivos na raiz
@@ -78,12 +92,21 @@ app.get('/api/key', (req, res) => {
   return res.status(404).json({ error: 'Chave nao encontrada' });
 });
 
+// ── Bloquear admin.html sem token ──────────────────────────
+app.get('/admin.html', (req, res) => {
+  const token = req.query.token;
+  if (!token || !adminSessions.has(token)) {
+    return res.status(403).send('Acesso negado');
+  }
+  res.sendFile(path.join(STATIC_DIR, 'admin.html'));
+});
+
 // ── API: Keys ─────────────────────────────────────────────
-app.get('/api/keys', (req, res) => {
+app.get('/api/keys', requireAdmin, (req, res) => {
   res.json(keysData);
 });
 
-app.post('/api/keys/generate', (req, res) => {
+app.post('/api/keys/generate', requireAdmin, (req, res) => {
   const count = Math.min(parseInt(req.body.count) || 1, 50);
   const newKeys = [];
   for (let i = 0; i < count; i++) {
@@ -95,14 +118,14 @@ app.post('/api/keys/generate', (req, res) => {
   res.json({ keys: newKeys, total: keysData.keys.length });
 });
 
-app.post('/api/keys/delete', (req, res) => {
+app.post('/api/keys/delete', requireAdmin, (req, res) => {
   const { key } = req.body;
   keysData.keys = keysData.keys.filter(k => k.key !== key);
   saveJSON(KEYS_FILE, keysData);
   res.json({ ok: true, total: keysData.keys.length });
 });
 
-app.post('/api/keys/toggle', (req, res) => {
+app.post('/api/keys/toggle', requireAdmin, (req, res) => {
   const { key } = req.body;
   const k = keysData.keys.find(x => x.key === key);
   if (k) { k.active = !k.active; saveJSON(KEYS_FILE, keysData); }
@@ -131,18 +154,38 @@ app.post('/api/auth/login', (req, res) => {
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
   const u = usersData.users.find(x => x.user === user && x.pass === pass);
   if (!u) return res.status(400).json({ error: 'Usuario ou senha incorretos' });
-  if (u.ip && u.ip !== ip) return res.status(400).json({ error: 'Acesso negado deste dispositivo' });
+  u.ip = ip;
   u.lastIp = ip;
+  u.lastLogin = new Date().toISOString();
   saveJSON(USERS_FILE, usersData);
   res.json({ ok: true, user: u.user });
 });
 
 // ── API: Admin ────────────────────────────────────────────
-app.get('/api/admin/users', (req, res) => {
+app.post('/api/admin/login', (req, res) => {
+  const { password } = req.body;
+  if (!password || password !== ADMIN_SECRET) {
+    return res.status(403).json({ error: 'Senha incorreta' });
+  }
+  const token = crypto.randomBytes(32).toString('hex');
+  adminSessions.set(token, { created: Date.now() });
+  setTimeout(() => { adminSessions.delete(token); }, 60 * 60 * 1000);
+  res.json({ ok: true, token });
+});
+
+function requireAdmin(req, res, next) {
+  const token = req.headers['x-admin-token'];
+  if (!token || !adminSessions.has(token)) {
+    return res.status(403).json({ error: 'Acesso negado' });
+  }
+  next();
+}
+
+app.get('/api/admin/users', requireAdmin, (req, res) => {
   res.json(usersData);
 });
 
-app.post('/api/admin/delete-user', (req, res) => {
+app.post('/api/admin/delete-user', requireAdmin, (req, res) => {
   const { user } = req.body;
   usersData.users = usersData.users.filter(u => u.user !== user);
   const k = keysData.keys.find(x => x.usedBy === user);
