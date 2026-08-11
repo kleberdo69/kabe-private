@@ -54,17 +54,6 @@ const wss = new WebSocketServer({ server, path: '/ws' });
 // Serve o site que fica na pasta acima (kabe-private/index.html)
 const STATIC_DIR = path.join(__dirname, '..');
 
-// Bloquear admin.html via express.static — só acessa via rota protegida
-app.use((req, res, next) => {
-  if (req.path === '/admin.html') {
-    const token = req.query.token;
-    if (!token || !adminSessions.has(token)) {
-      return res.status(403).send('Acesso negado');
-    }
-  }
-  next();
-});
-
 app.use(express.static(STATIC_DIR));
 
 // Debug: listar arquivos na raiz
@@ -90,15 +79,6 @@ app.get('/api/key', (req, res) => {
     } catch (e) {}
   }
   return res.status(404).json({ error: 'Chave nao encontrada' });
-});
-
-// ── Bloquear admin.html sem token ──────────────────────────
-app.get('/admin.html', (req, res) => {
-  const token = req.query.token;
-  if (!token || !adminSessions.has(token)) {
-    return res.status(403).send('Acesso negado');
-  }
-  res.sendFile(path.join(STATIC_DIR, 'admin.html'));
 });
 
 // ── API: Keys ─────────────────────────────────────────────
