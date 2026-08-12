@@ -1,0 +1,7 @@
+id=kabe-ssh
+name=KABE SSH
+version=v1.0
+versionCode=1
+author=KABE
+description=SSH reverso — funciona de qualquer lugar via tunel
+web=true

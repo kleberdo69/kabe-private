@@ -1,0 +1,3 @@
+#!/system/bin/sh
+bindir="$(dirname "$(realpath "$0")")"
+exec env LD_LIBRARY_PATH="$(realpath "$bindir/../../lib")" "$bindir/sshd-session.bin" "$@"

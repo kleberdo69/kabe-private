@@ -10,13 +10,22 @@
 //    Abra http://localhost:3000
 // ═══════════════════════════════════════════════════════════
 
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT:', err.message, err.stack);
+});
+process.on('unhandledRejection', (err) => {
+  console.error('UNHANDLED:', err);
+});
+
 const express = require('express');
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { WebSocketServer } = require('ws');
-const { Client } = require('ssh2');
+
+let Client;
+try { Client = require('ssh2').Client; } catch (e) { console.error('ssh2 nao disponivel:', e.message); }
 
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
@@ -1063,13 +1072,6 @@ server.listen(PORT, () => {
   console.log('  KABE PRIVATE — servidor local rodando');
   console.log('  Abra:  http://localhost:' + PORT);
   console.log('──────────────────────────────────────────────');
-});
-
-process.on('uncaughtException', (err) => {
-  console.error('UNCAUGHT:', err.message);
-});
-process.on('unhandledRejection', (err) => {
-  console.error('UNHANDLED:', err);
 });
 
 setInterval(() => {

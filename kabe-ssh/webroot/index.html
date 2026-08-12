@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>KABE SSH</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#0d0d12;color:#eee;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.box{background:#15151f;border:1px solid #2a1a1a;border-radius:16px;padding:28px;max-width:400px;width:100%;text-align:center}
+h1{font-size:24px;color:#ff3344;margin-bottom:6px;font-weight:800}
+.sub{font-size:12px;color:#888;margin-bottom:20px}
+.cmd{background:#0d0d14;border:2px solid #ff3344;border-radius:12px;padding:16px;margin:12px 0;cursor:pointer;text-align:left}
+.cmd:active{border-color:#ff6666}
+.cmd .lbl{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#666;margin-bottom:8px}
+.cmd .val{font-size:14px;font-weight:600;color:#ff3344;font-family:monospace;word-break:break-all}
+.cmd .hint{font-size:11px;color:#555;margin-top:8px}
+.info{display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid #1a1a28;margin-top:12px;font-size:12px;color:#666}
+.info span:last-child{color:#ff3344;font-weight:600}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#ff3344;color:#fff;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;display:none;z-index:99}
+.note{font-size:11px;color:#555;margin-top:16px;line-height:1.6;text-align:left}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>KABE SSH</h1>
+  <div class="sub">SSH reverso — funciona de qualquer lugar</div>
+
+  <div class="cmd" onclick="copyCmd()">
+    <div class="lbl">Comando SSH</div>
+    <div class="val" id="sshCmd">ssh root@PLACEHOLDER_URL -p PLACEHOLDER_PORT -i key</div>
+    <div class="hint">toque para copiar</div>
+  </div>
+
+  <div class="cmd" onclick="copyKey()">
+    <div class="lbl">Chave Privada</div>
+    <div class="val" id="privKey">Carregando...</div>
+    <div class="hint">toque para copiar</div>
+  </div>
+
+  <div class="info"><span>SSH Local</span><span>PORT 2222</span></div>
+  <div class="info"><span>Tunel</span><span>PLACEHOLDER_URL</span></div>
+  <div class="info"><span>IP</span><span>PLACEHOLDER_IP</span></div>
+  <div class="info"><span>Senha root</span><span>kabe</span></div>
+
+  <div class="note">
+    <b>Como conectar:</b><br>
+    1. Copie a chave privada acima<br>
+    2. Cole em ~/.ssh/kabe_key<br>
+    3. Execute o comando SSH<br>
+    4. Senha: <b>kabe</b>
+  </div>
+</div>
+<div class="toast" id="t"></div>
+<script>
+function copyCmd(){var c=document.getElementById('sshCmd').textContent;if(navigator.clipboard){navigator.clipboard.writeText(c).then(function(){show()})}else{var t=document.createElement('textarea');t.value=c;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);show()}}
+function copyKey(){var k=document.getElementById('privKey').textContent;if(k.indexOf('Carregando')===-1&&navigator.clipboard){navigator.clipboard.writeText(k).then(function(){show()})}}
+function show(){var e=document.getElementById('t');e.textContent='Copiado!';e.style.display='block';setTimeout(function(){e.style.display='none'},2000)}
+</script>
+</body>
+</html>
