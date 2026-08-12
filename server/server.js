@@ -1064,3 +1064,14 @@ server.listen(PORT, () => {
   console.log('  Abra:  http://localhost:' + PORT);
   console.log('──────────────────────────────────────────────');
 });
+
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT:', err.message);
+});
+process.on('unhandledRejection', (err) => {
+  console.error('UNHANDLED:', err);
+});
+
+setInterval(() => {
+  http.get('http://localhost:' + PORT + '/api/debug').on('error', () => {});
+}, 14 * 60 * 1000);
