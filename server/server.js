@@ -16,7 +16,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { WebSocketServer } = require('ws');
-const { Client } = require('ssh2');
+let Client; try { Client = require('ssh2').Client; } catch(e) { console.error('ssh2 indisponivel:', e.message); }
 
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
@@ -485,7 +485,7 @@ function normalizeKey(raw) {
   return k;
 }
 
-function connectSSH(conf) {
+function connectSSH(conf) { if (!Client) return Promise.reject(new Error('SSH nao disponivel no servidor'));
   return new Promise((resolve, reject) => {
     if (ssh) { try { ssh.end(); } catch (e) {} ssh = null; }
     ssh = new Client();
