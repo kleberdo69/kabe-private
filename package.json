@@ -3,11 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "NODE_PATH=/app/node_modules node server/server.js"
+    "start": "node server/server.js"
   },
   "dependencies": {
     "express": "^4.19.2",
-    "ssh2": "^1.15.0",
     "ws": "^8.17.0"
   }
 }
