@@ -729,7 +729,8 @@ document.getElementById('loginEye').addEventListener('click',function(){
             <h3>KABE PRIVATE</h3>
             <div class="badge" id="linkBadge"><i></i><span id="linkBadgeText">Procurando...</span></div>
           </div>
-          <div class="field" style="margin:0 0 10px"><label>Key do dispositivo</label><input id="linkKey" placeholder="Cole a key aqui"></div>
+          <div class="field" style="margin:0 0 10px"><label>Key do dispositivo</label><input id="linkKey" placeholder="Cole a key aqui" autocomplete="off"></div>
+          <button class="btn btn-main" id="linkConnectBtn" type="button" style="width:100%;margin-bottom:12px">Conectar</button>
           <div style="font-size:12px;color:var(--muted);margin-bottom:8px" id="linkDeviceInfo">...</div>
         </div>
       </section>
@@ -1010,13 +1011,19 @@ document.getElementById('loginEye').addEventListener('click',function(){
   function linkGetKey(){return ($('linkKey').value||'').trim()||linkKey;}
 
   function loadSavedKey(){
-    try{var k=sessionStorage.getItem('kabe_link_key');if(k){$('linkKey').value=k;linkKey=k;}}catch(e){}
+    try{var u=document.getElementById('userLabel').textContent||'default';var k=localStorage.getItem('kabe_link_key_'+u);if(k){$('linkKey').value=k;linkKey=k;}}catch(e){}
   }
-  function saveKey(k){try{sessionStorage.setItem('kabe_link_key',k);}catch(e){}}
+  function saveKey(k){try{var u=document.getElementById('userLabel').textContent||'default';localStorage.setItem('kabe_link_key_'+u,k);}catch(e){}}
 
   $('linkKey').addEventListener('input',function(){
     linkKey=$('linkKey').value.trim();
     if(linkKey)saveKey(linkKey);
+  });
+  $('linkConnectBtn').addEventListener('click',function(){
+    linkKey=$('linkKey').value.trim();
+    if(!linkKey){$('linkDeviceInfo').textContent='Digite uma key';return;}
+    saveKey(linkKey);
+    loadLinkDevices();
   });
 
   function loadLinkDevices(){

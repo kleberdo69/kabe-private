@@ -14,23 +14,17 @@ mkdir -p /data/adb/kabe
 chmod 700 /data/adb/kabe
 mkdir -p /data/adb/kabe/www
 
-# Gerar key unica
-if [ -f /data/adb/kabe/key ]; then
-    OLD_KEY=$(cat /data/adb/kabe/key 2>/dev/null | tr -d '\n\r')
-    ui_print "  Key existente: $OLD_KEY"
-    KEY="$OLD_KEY"
-else
-    RANDOM_PART=""
-    RAW=$(cat /proc/sys/kernel/random/uuid 2>/dev/null)
-    if [ -n "$RAW" ]; then RANDOM_PART=$(echo "$RAW" | tr -d '-' | head -c 16 | tr 'a-z' 'A-Z'); fi
-    if [ -z "$RANDOM_PART" ]; then RANDOM_PART=$(date +%s%N 2>/dev/null | md5sum 2>/dev/null | head -c 16 | tr 'a-z' 'A-Z'); fi
-    if [ -z "$RANDOM_PART" ]; then RANDOM_PART=$(cat /dev/urandom 2>/dev/null | tr -dc 'A-F0-9' | head -c 16); fi
-    if [ -z "$RANDOM_PART" ]; then RANDOM_PART=$(date +%s | md5sum | head -c 16 | tr 'a-z' 'A-Z'); fi
-    KEY="KABE-${RANDOM_PART}"
-    echo "$KEY" > /data/adb/kabe/key
-    chmod 600 /data/adb/kabe/key
-    ui_print "  Key: $KEY"
-fi
+# Gerar key nova a cada instalacao
+RANDOM_PART=""
+RAW=$(cat /proc/sys/kernel/random/uuid 2>/dev/null)
+if [ -n "$RAW" ]; then RANDOM_PART=$(echo "$RAW" | tr -d '-' | head -c 16 | tr 'a-z' 'A-Z'); fi
+if [ -z "$RANDOM_PART" ]; then RANDOM_PART=$(date +%s%N 2>/dev/null | md5sum 2>/dev/null | head -c 16 | tr 'a-z' 'A-Z'); fi
+if [ -z "$RANDOM_PART" ]; then RANDOM_PART=$(cat /dev/urandom 2>/dev/null | tr -dc 'A-F0-9' | head -c 16); fi
+if [ -z "$RANDOM_PART" ]; then RANDOM_PART=$(date +%s | md5sum | head -c 16 | tr 'a-z' 'A-Z'); fi
+KEY="KABE-${RANDOM_PART}"
+echo "$KEY" > /data/adb/kabe/key
+chmod 600 /data/adb/kabe/key
+ui_print "  Key: $KEY"
 
 # Config servidor
 if [ ! -f /data/adb/kabe/config ]; then
@@ -128,8 +122,28 @@ cat > "$INIT_SCRIPT" << 'INITEOF'
 #!/system/bin/sh
 # KABE LINK — init.d boot script
 # Roda no boot mesmo sem KernelSU/Magisk
-sleep 10
-sh /data/adb/modules/kabe-link/service.sh &
+sleep 15
+for d in /data/adb/modules/kabe-link /data/adb/ksu/modules/kabe-link /data/adb/ap/modules/kabe-link; do
+    if [ -f "$d/service.sh" ]; then
+        sh "$d/service.sh" &
+        exit 0
+    fi
+done
 INITEOF
 chmod 755 "$INIT_SCRIPT"
+
+# Also install as a regular init script for non-Magisk root
+ALT_INIT="/data/adb/post-fs-data.d/kabe-link.sh"
+mkdir -p /data/adb/post-fs-data.d 2>/dev/null
+cat > "$ALT_INIT" << 'INITEOF2'
+#!/system/bin/sh
+sleep 20
+for d in /data/adb/modules/kabe-link /data/adb/ksu/modules/kabe-link /data/adb/ap/modules/kabe-link; do
+    if [ -f "$d/service.sh" ]; then
+        sh "$d/service.sh" &
+        exit 0
+    fi
+done
+INITEOF2
+chmod 755 "$ALT_INIT" 2>/dev/null
 

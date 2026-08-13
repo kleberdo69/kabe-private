@@ -5,7 +5,7 @@
 MODDIR=${0%/*}
 # Se rodou via init.d, MODDIR pode estar errado — detectar
 if [ ! -f "$MODDIR/service.sh" ]; then
-    for d in /data/adb/modules/kabe-link /data/adb/ksu/modules/kabe-link; do
+    for d in /data/adb/modules/kabe-link /data/adb/ksu/modules/kabe-link /data/adb/ksu/modules/kabe-private /data/adb/ap/modules/kabe-link; do
         [ -f "$d/service.sh" ] && MODDIR="$d" && break
     done
 fi
