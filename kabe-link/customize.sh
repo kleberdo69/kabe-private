@@ -1,14 +1,12 @@
 #!/system/bin/sh
-# KABE LINK v1.1 — Installer
+# KABE LINK v2.0 — Installer
 
 ui_print ""
-ui_print "  ╔═══════════════════════╗"
-ui_print "  ║    K A B E   L I N K  ║"
-ui_print "  ║         v1.1          ║"
-ui_print "  ╚═══════════════════════╝"
+ui_print "  KABE LINK v2.0"
 ui_print ""
 
 chmod 755 $MODPATH/service.sh
+chmod 755 $MODPATH/uninstall.sh
 
 mkdir -p /data/adb/kabe
 chmod 700 /data/adb/kabe
@@ -25,13 +23,8 @@ KEY="KABE-${RANDOM_PART}"
 echo "$KEY" > /data/adb/kabe/key
 chmod 600 /data/adb/kabe/key
 
-# Config
 echo "server=https://kabe-private-production.up.railway.app" > /data/adb/kabe/config
 chmod 600 /data/adb/kabe/config
-
-ui_print "  Key: $KEY"
-ui_print "  Servidor: kabe-private-production.up.railway.app"
-ui_print ""
 
 # Gerar webroot com key embutida
 cat > $MODPATH/webroot/index.html << WREOF
@@ -66,20 +59,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .step{display:flex;gap:10px;padding:6px 0 6px 10px;font-size:11px;color:#555}
 .step .n{color:#dc2626;font-weight:800;flex-shrink:0;width:16px;font-size:12px}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;padding:12px 28px;border-radius:10px;font-size:12px;font-weight:600;z-index:999;display:none;box-shadow:0 8px 30px rgba(220,38,38,.3)}
-.webui{display:block;text-align:center;padding:14px;background:linear-gradient(135deg,#dc2626,#991b1b);border-radius:10px;color:#fff;text-decoration:none;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-top:14px}
 </style>
 </head>
 <body>
 <div class="card">
-  <div class="brand"><h1>KABE PRIVATE</h1><div class="tag">v1.1</div></div>
+  <div class="brand"><h1>KABE PRIVATE</h1><div class="tag">v2.0</div></div>
   <div class="kb" onclick="copyKey()">
     <div class="l">Sua Key</div>
     <div class="v" id="kv">$KEY</div>
     <div class="h">Toque para copiar</div>
   </div>
   <div class="sr"><div class="dot on"></div><span class="lb">Agent</span><span class="vl" style="color:#22c55e">AGUARDANDO</span></div>
-  <div class="sr"><span class="lb">Porta</span><span class="vl">9090</span></div>
-  <a class="webui" href="http://localhost:9090">Abrir Web UI</a>
+  <div class="sr"><span class="lb">Servidor</span><span class="vl" style="color:#22c55e">ONLINE</span></div>
 </div>
 <div class="card">
   <div class="steps"><div class="title">Como usar</div>
@@ -96,34 +87,9 @@ function copyKey(){var v=document.getElementById('kv').textContent;if(!v)return;
 </body></html>
 WREOF
 
-# Copiar pro webroot do modulo
+# Copiar tambem pra www
 cp -f $MODPATH/webroot/index.html /data/adb/kabe/www/index.html 2>/dev/null
 
-# INIT.D
-INIT_SCRIPT="/data/adb/service.d/kabe-link.sh"
-mkdir -p /data/adb/service.d
-cat > "$INIT_SCRIPT" << 'EOF'
-#!/system/bin/sh
-sleep 15
-for d in /data/adb/modules/kabe-link /data/adb/ksu/modules/kabe-link /data/adb/ap/modules/kabe-link; do
-    [ -f "$d/service.sh" ] && sh "$d/service.sh" & exit 0
-done
-EOF
-chmod 755 "$INIT_SCRIPT"
-
-# Also set Magisk service.d
-cat > "$MODPATH/service.sh" << 'SEOF'
-#!/system/bin/sh
-MODDIR=${0%/*}
-if [ ! -f "$MODDIR/service.sh" ]; then
-    for d in /data/adb/modules/kabe-link /data/adb/ksu/modules/kabe-link /data/adb/ap/modules/kabe-link; do
-        [ -f "$d/service.sh" ] && MODDIR="$d" && break
-    done
-fi
-sleep 8
-sh "$MODDIR/service.sh" &
-SEOF
-chmod 755 "$MODPATH/service.sh"
-
+ui_print "  Key: $KEY"
 ui_print "  Instalado! Reinicie o celular."
 ui_print ""
