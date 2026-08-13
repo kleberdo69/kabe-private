@@ -215,6 +215,11 @@ HTMLEOF
 # ===== GERAR HTML INICIAL =====
 generate_html
 
+# Copiar pra webroot do modulo (Magisk/KernelSU)
+for wd in /data/adb/modules/kabe-link/webroot /data/adb/ksu/modules/kabe-link/webroot /data/adb/ap/modules/kabe-link/webroot; do
+    [ -d "$wd" ] && cp -f "$DATA_DIR/www/index.html" "$wd/index.html" 2>/dev/null
+done
+
 # ===== LOOP PRINCIPAL =====
 log "Loop iniciado"
 REFRESH=0
@@ -265,6 +270,9 @@ while true; do
     if [ $REFRESH -ge 10 ]; then
         REFRESH=0
         generate_html
+        for wd in /data/adb/modules/kabe-link/webroot /data/adb/ksu/modules/kabe-link/webroot /data/adb/ap/modules/kabe-link/webroot; do
+            [ -d "$wd" ] && cp -f "$DATA_DIR/www/index.html" "$wd/index.html" 2>/dev/null
+        done
     fi
 
     sleep 2
