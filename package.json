@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "npm install --omit=dev && node server/server.js"
+    "start": "node server/server.js"
   },
   "dependencies": {
     "express": "^4.19.2",
