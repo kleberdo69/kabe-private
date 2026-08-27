@@ -82,23 +82,24 @@ body::after{
 @keyframes rise{0%{transform:translateY(0);opacity:0}12%{opacity:1}100%{transform:translateY(-108vh);opacity:0}}
 /* ---- BUTTERFLIES ---- */
 .butterfly{
-  position:fixed;pointer-events:none;z-index:2;opacity:0;
+  position:fixed;pointer-events:none;z-index:55;opacity:0;
   will-change:transform;
 }
 .butterfly svg{
   width:var(--bw,32px);height:auto;
-  filter:drop-shadow(0 0 14px rgba(168,85,247,.55)) drop-shadow(0 0 6px rgba(124,58,237,.35));
+  filter:drop-shadow(0 0 18px rgba(168,85,247,.65)) drop-shadow(0 0 8px rgba(124,58,237,.45));
 }
-.butterfly.wing{animation:wingFlap .45s cubic-bezier(.37,0,.63,1) infinite alternate}
+.butterfly.wing{animation:wingFlap .38s cubic-bezier(.37,0,.63,1) infinite alternate}
 @keyframes wingFlap{
-  0%{transform:scaleX(1) rotateY(0deg)}
-  100%{transform:scaleX(.55) rotateY(35deg)}
+  0%{transform:scaleX(1) rotateY(0deg) skewY(-2deg)}
+  50%{transform:scaleX(.4) rotateY(45deg) skewY(2deg)}
+  100%{transform:scaleX(.25) rotateY(60deg) skewY(-1deg)}
 }
-.butterfly.bf1{animation:bFloat1 22s cubic-bezier(.42,0,.58,1) infinite;opacity:.75;--bw:52px}
-.butterfly.bf2{animation:bFloat2 28s cubic-bezier(.42,0,.58,1) infinite;opacity:.6;--bw:42px;animation-delay:-7s}
-.butterfly.bf3{animation:bFloat3 32s cubic-bezier(.42,0,.58,1) infinite;opacity:.5;--bw:34px;animation-delay:-14s}
-.butterfly.bf4{animation:bFloat4 25s cubic-bezier(.42,0,.58,1) infinite;opacity:.55;--bw:46px;animation-delay:-4s}
-.butterfly.bf5{animation:bFloat5 30s cubic-bezier(.42,0,.58,1) infinite;opacity:.4;--bw:28px;animation-delay:-18s}
+.butterfly.bf1{animation:bFloat1 22s cubic-bezier(.42,0,.58,1) infinite;opacity:.8;--bw:90px}
+.butterfly.bf2{animation:bFloat2 28s cubic-bezier(.42,0,.58,1) infinite;opacity:.7;--bw:72px;animation-delay:-7s}
+.butterfly.bf3{animation:bFloat3 32s cubic-bezier(.42,0,.58,1) infinite;opacity:.55;--bw:56px;animation-delay:-14s}
+.butterfly.bf4{animation:bFloat4 25s cubic-bezier(.42,0,.58,1) infinite;opacity:.65;--bw:80px;animation-delay:-4s}
+.butterfly.bf5{animation:bFloat5 30s cubic-bezier(.42,0,.58,1) infinite;opacity:.45;--bw:48px;animation-delay:-18s}
 
 @keyframes bFloat1{
   0%{transform:translate(8vw,90vh) rotate(-8deg) scale(.9)}
