@@ -3,35 +3,48 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KABE PRIVATE — Admin</title>
+<title>CHZ REMOTE — Admin</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#050507;--panel:rgba(255,255,255,.045);--stroke:rgba(255,255,255,.09);--red:#ff2d3e;--red-deep:#a1121f;--text:#f4f4f7;--muted:#9a9aa8;--green:#2dd4a7;--radius:14px;--font:'Inter',sans-serif;--display:'Space Grotesk',sans-serif}
+:root{--bg:#080312;--panel:rgba(255,255,255,.045);--stroke:rgba(255,255,255,.09);--red:#a855f7;--red-deep:#7c3aed;--text:#f4f4f7;--muted:#9a9aa8;--green:#2dd4a7;--radius:14px;--font:'Inter',sans-serif;--display:'Space Grotesk',sans-serif}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font)}
-::selection{background:rgba(255,45,62,.35);color:#fff}
-.wrap{max-width:700px;margin:0 auto;padding:30px 20px}
-h1{font-family:var(--display);font-size:22px;margin-bottom:6px;background:linear-gradient(120deg,#fff,#ff6b75,#ff2d3e);-webkit-background-clip:text;background-clip:text;color:transparent}
+::selection{background:rgba(168,85,247,.35);color:#fff}
+body::before{
+  content:'';position:fixed;inset:-12%;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(46% 34% at 12% 8%,rgba(124,58,237,.32),transparent 62%),
+    radial-gradient(40% 30% at 88% 10%,rgba(76,29,149,.3),transparent 62%),
+    radial-gradient(52% 44% at 50% 108%,rgba(46,16,101,.5),transparent 66%);
+  animation:aurora 24s ease-in-out infinite alternate;
+}
+@keyframes aurora{0%{transform:translate(0,0) scale(1)}50%{transform:translate(-2%,1.2%) scale(1.06)}100%{transform:translate(2%,-1%) scale(1.02)}}
+.wrap{max-width:700px;margin:0 auto;padding:30px 20px;position:relative;z-index:2}
+h1{font-family:var(--display);font-size:22px;margin-bottom:6px;background:linear-gradient(120deg,#fff 0%,#c084fc 35%,#a855f7 55%,#e9d5ff 80%,#fff 100%);background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 6s linear infinite}
+@keyframes shine{from{background-position:0% center}to{background-position:220% center}}
 .sub{color:var(--muted);font-size:12px;margin-bottom:28px;letter-spacing:1px}
-.card{background:var(--panel);border:1px solid var(--stroke);border-radius:var(--radius);padding:22px;margin-bottom:20px;backdrop-filter:blur(16px)}
+.card{position:relative;background:var(--panel);border:1px solid var(--stroke);border-radius:var(--radius);padding:22px;margin-bottom:20px;backdrop-filter:blur(16px);transition:border-color .3s,box-shadow .3s}
+.card:hover{border-color:rgba(168,85,247,.3);box-shadow:0 8px 40px -12px rgba(168,85,247,.2)}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent)}
 .card h2{font-family:var(--display);font-size:14px;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted)}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-input,select{background:rgba(0,0,0,.5);border:1px solid var(--stroke);border-radius:10px;padding:10px 14px;color:var(--text);font:inherit;font-size:13px;outline:0;transition:border .2s}
-input:focus{border-color:var(--red-deep)}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:10px 18px;border-radius:10px;font-weight:700;font-size:12px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(135deg,#c1121f,#8f0d18);color:#fff;cursor:pointer;text-transform:uppercase;letter-spacing:.8px;transition:all .2s}
-.btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px -8px rgba(255,45,62,.6)}
-.btn-sm{min-height:34px;padding:7px 14px;font-size:11px;background:linear-gradient(180deg,#141416,#0c0c0e);color:var(--text)}
-.btn-sm:hover{border-color:rgba(255,45,62,.5)}
-.btn-danger{background:linear-gradient(135deg,#8f0d18,#5f0a12)}
+input,select{background:rgba(0,0,0,.5);border:1px solid var(--stroke);border-radius:10px;padding:10px 14px;color:var(--text);font:inherit;font-size:13px;outline:0;transition:border-color .25s,box-shadow .25s}
+input:focus{border-color:var(--red-deep);box-shadow:0 0 0 3px rgba(168,85,247,.14)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:10px 18px;border-radius:10px;font-weight:700;font-size:12px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;cursor:pointer;text-transform:uppercase;letter-spacing:.8px;transition:all .22s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px -8px rgba(168,85,247,.6)}
+.btn-sm{min-height:34px;padding:7px 14px;font-size:11px;background:linear-gradient(180deg,#1a1025,#12081e);color:var(--text)}
+.btn-sm:hover{border-color:rgba(168,85,247,.5);box-shadow:0 6px 20px -6px rgba(168,85,247,.3)}
+.btn-danger{background:linear-gradient(135deg,#dc2626,#991b1b)}
+.btn-danger:hover{box-shadow:0 8px 24px -8px rgba(220,38,38,.5)}
 table{width:100%;border-collapse:collapse;font-size:12px}
 th{text-align:left;padding:10px 12px;border-bottom:1px solid var(--stroke);color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1.4px;font-weight:800}
 td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04)}
 .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.5px}
 .badge.on{background:rgba(45,212,167,.12);color:var(--green);border:1px solid rgba(45,212,167,.3)}
-.badge.off{background:rgba(255,45,62,.1);color:#ff6b75;border:1px solid rgba(255,45,62,.3)}
-.toast{position:fixed;bottom:20px;right:20px;background:rgba(20,16,22,.95);border:1px solid var(--stroke);border-radius:12px;padding:14px 20px;font-size:13px;backdrop-filter:blur(16px);box-shadow:0 16px 40px -10px rgba(0,0,0,.8);z-index:999;animation:slideIn .3s ease;max-width:340px}
+.badge.off{background:rgba(220,38,38,.1);color:#f87171;border:1px solid rgba(220,38,38,.3)}
+.toast{position:fixed;bottom:20px;right:20px;background:rgba(20,12,35,.95);border:1px solid var(--stroke);border-radius:12px;padding:14px 20px;font-size:13px;backdrop-filter:blur(16px);box-shadow:0 16px 40px -10px rgba(0,0,0,.8);z-index:999;animation:slideIn .3s ease;max-width:340px}
 .toast.ok{border-color:rgba(45,212,167,.4)}
-.toast.err{border-color:rgba(255,45,62,.4)}
+.toast.err{border-color:rgba(220,38,38,.4)}
 @keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .empty{color:var(--muted);font-size:13px;text-align:center;padding:24px}
 .copy{cursor:pointer;color:var(--red);font-weight:700}
@@ -39,15 +52,103 @@ td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04)}
 #loginPanel{max-width:380px;margin:120px auto}
 #loginPanel .card{text-align:center}
 #loginPanel input{width:100%;margin-bottom:12px}
-#loginPanel .err{color:#ff6b75;font-size:12px;margin-top:8px;min-height:18px}
+#loginPanel .err{color:#f87171;font-size:12px;margin-top:8px;min-height:18px}
 #adminPanel{display:none}
 </style>
 </head>
 <body>
 
+<!-- BUTTERFLIES -->
+<div class="butterfly bf1 wing" aria-hidden="true">
+<svg viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M50 40 C50 40, 10 5, 5 30 C0 55, 40 70, 50 40Z" fill="url(#abw1)" opacity=".85"/>
+  <path d="M50 40 C50 40, 90 5, 95 30 C100 55, 60 70, 50 40Z" fill="url(#abw1)" opacity=".85"/>
+  <path d="M50 40 C50 40, 15 50, 10 60 C5 70, 35 72, 50 40Z" fill="url(#abw2)" opacity=".7"/>
+  <path d="M50 40 C50 40, 85 50, 90 60 C95 70, 65 72, 50 40Z" fill="url(#abw2)" opacity=".7"/>
+  <line x1="50" y1="40" x2="45" y2="15" stroke="#c084fc" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="50" y1="40" x2="55" y2="15" stroke="#c084fc" stroke-width="1.2" stroke-linecap="round"/>
+  <circle cx="44" cy="13" r="2" fill="#d8b4fe"/>
+  <circle cx="56" cy="13" r="2" fill="#d8b4fe"/>
+  <defs>
+    <linearGradient id="abw1" x1="0" y1="0" x2="100" y2="80"><stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient>
+    <linearGradient id="abw2" x1="0" y1="0" x2="100" y2="80"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#9333ea"/></linearGradient>
+  </defs>
+</svg>
+</div>
+<div class="butterfly bf2 wing" aria-hidden="true">
+<svg viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M50 40 C50 40, 10 5, 5 30 C0 55, 40 70, 50 40Z" fill="url(#abw3)" opacity=".8"/>
+  <path d="M50 40 C50 40, 90 5, 95 30 C100 55, 60 70, 50 40Z" fill="url(#abw3)" opacity=".8"/>
+  <path d="M50 40 C50 40, 15 50, 10 60 C5 70, 35 72, 50 40Z" fill="url(#abw4)" opacity=".65"/>
+  <path d="M50 40 C50 40, 85 50, 90 60 C95 70, 65 72, 50 40Z" fill="url(#abw4)" opacity=".65"/>
+  <line x1="50" y1="40" x2="45" y2="15" stroke="#9333ea" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="50" y1="40" x2="55" y2="15" stroke="#9333ea" stroke-width="1.2" stroke-linecap="round"/>
+  <circle cx="44" cy="13" r="2" fill="#c084fc"/>
+  <circle cx="56" cy="13" r="2" fill="#c084fc"/>
+  <defs>
+    <linearGradient id="abw3" x1="0" y1="0" x2="100" y2="80"><stop offset="0%" stop-color="#9333ea"/><stop offset="100%" stop-color="#6d28d9"/></linearGradient>
+    <linearGradient id="abw4" x1="0" y1="0" x2="100" y2="80"><stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient>
+  </defs>
+</svg>
+</div>
+<div class="butterfly bf3 wing" aria-hidden="true">
+<svg viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M50 40 C50 40, 10 5, 5 30 C0 55, 40 70, 50 40Z" fill="url(#abw5)" opacity=".7"/>
+  <path d="M50 40 C50 40, 90 5, 95 30 C100 55, 60 70, 50 40Z" fill="url(#abw5)" opacity=".7"/>
+  <path d="M50 40 C50 40, 15 50, 10 60 C5 70, 35 72, 50 40Z" fill="url(#abw6)" opacity=".55"/>
+  <path d="M50 40 C50 40, 85 50, 90 60 C95 70, 65 72, 50 40Z" fill="url(#abw6)" opacity=".55"/>
+  <line x1="50" y1="40" x2="45" y2="15" stroke="#d8b4fe" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="50" y1="40" x2="55" y2="15" stroke="#d8b4fe" stroke-width="1.2" stroke-linecap="round"/>
+  <circle cx="44" cy="13" r="2" fill="#e9d5ff"/>
+  <circle cx="56" cy="13" r="2" fill="#e9d5ff"/>
+  <defs>
+    <linearGradient id="abw5" x1="0" y1="0" x2="100" y2="80"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#a855f7"/></linearGradient>
+    <linearGradient id="abw6" x1="0" y1="0" x2="100" y2="80"><stop offset="0%" stop-color="#d8b4fe"/><stop offset="100%" stop-color="#9333ea"/></linearGradient>
+  </defs>
+</svg>
+</div>
+
+<style>
+.butterfly{position:fixed;pointer-events:none;z-index:2;opacity:0;will-change:transform}
+.butterfly svg{width:var(--bw,32px);height:auto;filter:drop-shadow(0 0 14px rgba(168,85,247,.55)) drop-shadow(0 0 6px rgba(124,58,237,.35))}
+.butterfly.wing{animation:wingFlap .45s cubic-bezier(.37,0,.63,1) infinite alternate}
+@keyframes wingFlap{0%{transform:scaleX(1) rotateY(0deg)}100%{transform:scaleX(.55) rotateY(35deg)}}
+.butterfly.bf1{animation:bFloat1 22s cubic-bezier(.42,0,.58,1) infinite;opacity:.75;--bw:52px}
+.butterfly.bf2{animation:bFloat2 28s cubic-bezier(.42,0,.58,1) infinite;opacity:.6;--bw:42px;animation-delay:-7s}
+.butterfly.bf3{animation:bFloat3 32s cubic-bezier(.42,0,.58,1) infinite;opacity:.5;--bw:34px;animation-delay:-14s}
+@keyframes bFloat1{
+  0%{transform:translate(8vw,90vh) rotate(-8deg) scale(.9)}
+  12%{transform:translate(18vw,62vh) rotate(5deg) scale(1.05)}
+  28%{transform:translate(32vw,28vh) rotate(-12deg) scale(1.1)}
+  42%{transform:translate(52vw,18vh) rotate(3deg) scale(1)}
+  58%{transform:translate(72vw,38vh) rotate(-6deg) scale(1.08)}
+  72%{transform:translate(82vw,60vh) rotate(9deg) scale(.95)}
+  88%{transform:translate(45vw,72vh) rotate(-3deg) scale(1.02)}
+  100%{transform:translate(8vw,90vh) rotate(-8deg) scale(.9)}
+}
+@keyframes bFloat2{
+  0%{transform:translate(88vw,82vh) rotate(6deg) scale(.92)}
+  14%{transform:translate(75vw,50vh) rotate(-10deg) scale(1.06)}
+  30%{transform:translate(55vw,22vh) rotate(4deg) scale(1.1)}
+  46%{transform:translate(30vw,35vh) rotate(-7deg) scale(1)}
+  62%{transform:translate(18vw,58vh) rotate(11deg) scale(.94)}
+  78%{transform:translate(40vw,75vh) rotate(-5deg) scale(1.04)}
+  100%{transform:translate(88vw,82vh) rotate(6deg) scale(.92)}
+}
+@keyframes bFloat3{
+  0%{transform:translate(50vw,88vh) rotate(3deg) scale(.88)}
+  16%{transform:translate(68vw,55vh) rotate(-8deg) scale(1.12)}
+  34%{transform:translate(80vw,25vh) rotate(6deg) scale(1.05)}
+  52%{transform:translate(42vw,15vh) rotate(-10deg) scale(1)}
+  70%{transform:translate(15vw,42vh) rotate(8deg) scale(.96)}
+  86%{transform:translate(28vw,68vh) rotate(-4deg) scale(1.08)}
+  100%{transform:translate(50vw,88vh) rotate(3deg) scale(.88)}
+}
+</style>
+
 <div id="loginPanel">
   <div class="wrap" style="padding:0">
-    <h1>KABE PRIVATE</h1>
+    <h1>CHZ REMOTE</h1>
     <div class="sub">Painel Admin — Acesso Restrito</div>
     <div class="card">
       <h2>Login</h2>
@@ -60,7 +161,7 @@ td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04)}
 
 <div id="adminPanel">
   <div class="wrap">
-    <h1>KABE PRIVATE</h1>
+    <h1>CHZ REMOTE</h1>
     <div class="sub">Painel Admin</div>
 
     <div class="card">
@@ -175,19 +276,19 @@ document.getElementById('genBtn').addEventListener('click', function() {
 });
 
 function toggleKey(key) {
-  adminFetch('/api/keys/toggle', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({key: key}) })
+  adminFetch('/api/keys/toggle', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({key: key}) })
     .then(function(r) { return r.json(); }).then(function() { loadKeys(); });
 }
 
 function deleteKey(key) {
   if (!confirm('Excluir key ' + key + '?')) return;
-  adminFetch('/api/keys/delete', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({key: key}) })
+  adminFetch('/api/keys/delete', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({key: key}) })
     .then(function(r) { return r.json(); }).then(function() { toast('Key excluida', 1); loadKeys(); });
 }
 
 function deleteUser(user) {
   if (!confirm('Excluir usuario ' + user + '?')) return;
-  adminFetch('/api/admin/delete-user', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({user: user}) })
+  adminFetch('/api/admin/delete-user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({user: user}) })
     .then(function(r) { return r.json(); }).then(function() { toast('Usuario excluido', 1); loadUsers(); });
 }
 </script>
