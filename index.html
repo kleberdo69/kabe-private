@@ -87,47 +87,64 @@ body::after{
 }
 .butterfly svg{
   width:var(--bw,32px);height:auto;
-  filter:drop-shadow(0 0 12px rgba(168,85,247,.6));
+  filter:drop-shadow(0 0 14px rgba(168,85,247,.55)) drop-shadow(0 0 6px rgba(124,58,237,.35));
 }
-.butterfly.wing svg{animation:wingFlap .6s ease-in-out infinite alternate}
-@keyframes wingFlap{0%{transform:scaleX(1)}100%{transform:scaleX(.65)}}
-.butterfly.bf1{animation:bFloat1 18s ease-in-out infinite;opacity:.7;--bw:28px}
-.butterfly.bf2{animation:bFloat2 22s ease-in-out infinite;opacity:.55;--bw:22px;animation-delay:-6s}
-.butterfly.bf3{animation:bFloat3 26s ease-in-out infinite;opacity:.45;--bw:18px;animation-delay:-12s}
-.butterfly.bf4{animation:bFloat4 20s ease-in-out infinite;opacity:.5;--bw:24px;animation-delay:-3s}
-.butterfly.bf5{animation:bFloat5 24s ease-in-out infinite;opacity:.35;--bw:16px;animation-delay:-9s}
+.butterfly.wing{animation:wingFlap .45s cubic-bezier(.37,0,.63,1) infinite alternate}
+@keyframes wingFlap{
+  0%{transform:scaleX(1) rotateY(0deg)}
+  100%{transform:scaleX(.55) rotateY(35deg)}
+}
+.butterfly.bf1{animation:bFloat1 22s cubic-bezier(.42,0,.58,1) infinite;opacity:.75;--bw:52px}
+.butterfly.bf2{animation:bFloat2 28s cubic-bezier(.42,0,.58,1) infinite;opacity:.6;--bw:42px;animation-delay:-7s}
+.butterfly.bf3{animation:bFloat3 32s cubic-bezier(.42,0,.58,1) infinite;opacity:.5;--bw:34px;animation-delay:-14s}
+.butterfly.bf4{animation:bFloat4 25s cubic-bezier(.42,0,.58,1) infinite;opacity:.55;--bw:46px;animation-delay:-4s}
+.butterfly.bf5{animation:bFloat5 30s cubic-bezier(.42,0,.58,1) infinite;opacity:.4;--bw:28px;animation-delay:-18s}
+
 @keyframes bFloat1{
-  0%{transform:translate(10vw,80vh) rotate(-5deg)}
-  25%{transform:translate(25vw,40vh) rotate(8deg) scale(1.1)}
-  50%{transform:translate(60vw,20vh) rotate(-3deg)}
-  75%{transform:translate(80vw,55vh) rotate(10deg) scale(.95)}
-  100%{transform:translate(10vw,80vh) rotate(-5deg)}
+  0%{transform:translate(8vw,90vh) rotate(-8deg) scale(.9)}
+  12%{transform:translate(18vw,62vh) rotate(5deg) scale(1.05)}
+  28%{transform:translate(32vw,28vh) rotate(-12deg) scale(1.1)}
+  42%{transform:translate(52vw,18vh) rotate(3deg) scale(1)}
+  58%{transform:translate(72vw,38vh) rotate(-6deg) scale(1.08)}
+  72%{transform:translate(82vw,60vh) rotate(9deg) scale(.95)}
+  88%{transform:translate(45vw,72vh) rotate(-3deg) scale(1.02)}
+  100%{transform:translate(8vw,90vh) rotate(-8deg) scale(.9)}
 }
 @keyframes bFloat2{
-  0%{transform:translate(85vw,70vh) rotate(3deg)}
-  25%{transform:translate(70vw,25vh) rotate(-7deg) scale(1.05)}
-  50%{transform:translate(35vw,60vh) rotate(5deg)}
-  75%{transform:translate(15vw,30vh) rotate(-4deg) scale(.9)}
-  100%{transform:translate(85vw,70vh) rotate(3deg)}
+  0%{transform:translate(88vw,82vh) rotate(6deg) scale(.92)}
+  14%{transform:translate(75vw,50vh) rotate(-10deg) scale(1.06)}
+  30%{transform:translate(55vw,22vh) rotate(4deg) scale(1.1)}
+  46%{transform:translate(30vw,35vh) rotate(-7deg) scale(1)}
+  62%{transform:translate(18vw,58vh) rotate(11deg) scale(.94)}
+  78%{transform:translate(40vw,75vh) rotate(-5deg) scale(1.04)}
+  100%{transform:translate(88vw,82vh) rotate(6deg) scale(.92)}
 }
 @keyframes bFloat3{
-  0%{transform:translate(45vw,85vh) rotate(2deg)}
-  33%{transform:translate(75vw,35vh) rotate(-6deg) scale(1.15)}
-  66%{transform:translate(20vw,50vh) rotate(4deg) scale(.9)}
-  100%{transform:translate(45vw,85vh) rotate(2deg)}
+  0%{transform:translate(50vw,88vh) rotate(3deg) scale(.88)}
+  16%{transform:translate(68vw,55vh) rotate(-8deg) scale(1.12)}
+  34%{transform:translate(80vw,25vh) rotate(6deg) scale(1.05)}
+  52%{transform:translate(42vw,15vh) rotate(-10deg) scale(1)}
+  70%{transform:translate(15vw,42vh) rotate(8deg) scale(.96)}
+  86%{transform:translate(28vw,68vh) rotate(-4deg) scale(1.08)}
+  100%{transform:translate(50vw,88vh) rotate(3deg) scale(.88)}
 }
 @keyframes bFloat4{
-  0%{transform:translate(5vw,50vh) rotate(-4deg)}
-  25%{transform:translate(40vw,15vh) rotate(6deg) scale(1.1)}
-  50%{transform:translate(80vw,45vh) rotate(-2deg)}
-  75%{transform:translate(55vw,75vh) rotate(8deg) scale(.95)}
-  100%{transform:translate(5vw,50vh) rotate(-4deg)}
+  0%{transform:translate(3vw,55vh) rotate(-6deg) scale(.94)}
+  15%{transform:translate(22vw,20vh) rotate(9deg) scale(1.08)}
+  32%{transform:translate(48vw,12vh) rotate(-4deg) scale(1.1)}
+  50%{transform:translate(75vw,30vh) rotate(7deg) scale(.98)}
+  68%{transform:translate(85vw,58vh) rotate(-9deg) scale(1.05)}
+  84%{transform:translate(58vw,78vh) rotate(5deg) scale(.92)}
+  100%{transform:translate(3vw,55vh) rotate(-6deg) scale(.94)}
 }
 @keyframes bFloat5{
-  0%{transform:translate(90vw,40vh) rotate(5deg)}
-  33%{transform:translate(50vw,70vh) rotate(-8deg) scale(1.1)}
-  66%{transform:translate(25vw,20vh) rotate(3deg) scale(.85)}
-  100%{transform:translate(90vw,40vh) rotate(5deg)}
+  0%{transform:translate(92vw,45vh) rotate(7deg) scale(.9)}
+  18%{transform:translate(65vw,68vh) rotate(-11deg) scale(1.1)}
+  36%{transform:translate(35vw,80vh) rotate(5deg) scale(1.04)}
+  54%{transform:translate(12vw,55vh) rotate(-8deg) scale(.96)}
+  72%{transform:translate(25vw,22vh) rotate(10deg) scale(1.08)}
+  90%{transform:translate(70vw,35vh) rotate(-3deg) scale(.92)}
+  100%{transform:translate(92vw,45vh) rotate(7deg) scale(.9)}
 }
 /* ---- LOGIN ---- */
 #loginWrap{
@@ -147,25 +164,23 @@ body::after{
   background:linear-gradient(180deg,rgba(20,12,35,.9),rgba(10,5,20,.97));
   border:1px solid rgba(255,255,255,.12);
   border-radius:24px;padding:38px 32px 30px;
-  box-shadow:0 46px 110px -34px rgba(0,0,0,.95),0 0 90px -24px rgba(168,85,247,.45),inset 0 1px 0 rgba(255,255,255,.09);
+  box-shadow:0 46px 110px -34px rgba(0,0,0,.95),0 0 60px -20px rgba(168,85,247,.35),0 0 120px -40px rgba(124,58,237,.2),inset 0 1px 0 rgba(255,255,255,.09);
   backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);
   animation:cardIn .8s cubic-bezier(.16,1,.3,1),floatIn 7s ease-in-out .8s infinite;
   transform-style:preserve-3d;
 }
 .login-box::before{
-  content:'';position:absolute;inset:-1px;border-radius:25px;padding:1px;z-index:0;pointer-events:none;
-  background:conic-gradient(from 0deg,transparent 0deg,transparent 288deg,rgba(168,85,247,.95) 342deg,rgba(216,180,254,.75) 352deg,rgba(255,255,255,.55) 358deg,transparent 360deg);
-  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
-  -webkit-mask-composite:xor;
-  mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
-  mask-composite:exclude;
-  animation:ringSpin 4.5s linear infinite;
+  content:'';position:absolute;inset:-2px;border-radius:26px;pointer-events:none;z-index:0;
+  background:linear-gradient(135deg,rgba(168,85,247,.4),transparent 30%,transparent 70%,rgba(124,58,237,.35));
+  opacity:.7;transition:opacity .5s;
 }
+.login-box:hover::before{opacity:1}
 .login-box::after{
   content:'';position:absolute;inset:0;border-radius:24px;pointer-events:none;z-index:0;overflow:hidden;
-  background:radial-gradient(90% 60% at 50% 0%,rgba(168,85,247,.08),transparent 60%);
+  background:
+    radial-gradient(90% 60% at 50% 0%,rgba(168,85,247,.1),transparent 60%),
+    radial-gradient(40% 30% at 20% 80%,rgba(124,58,237,.06),transparent 50%);
 }
-@keyframes ringSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 @keyframes cardIn{from{opacity:0;transform:translateY(30px) scale(.95) rotateX(6deg)}to{opacity:1;transform:none}}
 @keyframes floatIn{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
 .login-in{position:relative;z-index:1}
